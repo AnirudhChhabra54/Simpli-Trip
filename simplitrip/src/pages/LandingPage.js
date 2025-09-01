@@ -182,7 +182,7 @@ const LandingPage = () => {
                             <p className="text-lg md:text-xl max-w-2xl mx-auto text-gray-300">
                                 Your journey to the farthest reaches of imagination begins now. Plan, share, and experience trips like never before.
                             </p>
-                            <button className="mt-8 bg-white text-black font-bold py-3 px-8 rounded-lg text-lg transform hover:scale-105 transition-transform shadow-lg shadow-cyan-500/20">
+                            <button className="mt-8 bg-white text-black font-bold py-3 px-8 rounded-lg text-lg transform hover:scale-105 transition-transform shadow-lg-cyan">
                                 Launch Your Trip
                             </button>
                         </div>
