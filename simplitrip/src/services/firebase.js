@@ -3,7 +3,10 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
+// IMPORTANT: Your web app's Firebase configuration
+// It's highly recommended to move this configuration into environment variables
+// to avoid exposing your API keys and other sensitive information in the source code.
+// For example, you can use a .env file and process.env.REACT_APP_API_KEY.
 const firebaseConfig = {
   apiKey: "AIzaSyCgnRNIkfU92dr6JdxrPlU5B2NcNPrVzSc",
   authDomain: "simplitrip.firebaseapp.com",

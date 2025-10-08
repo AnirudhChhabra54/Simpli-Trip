@@ -1,20 +1,13 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TripDetailPage from './pages/TripDetailPage';
-import { useUser } from './context/UserContext';
-import Layout from './components/Layout';
-
-
-//Landing page imported 
 import LandingPage from './pages/LandingPage';
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useUser();
+import { UserProvider, useUser } from './context/UserContext';
 
-  if (loading) {
-    return <div>Loading...</div>; // Or a spinner component
-  }
+const ProtectedRoute = ({ children }) => {
+  const { user } = useUser();
 
   if (!user) {
     return <Navigate to="/login" />;
@@ -23,23 +16,45 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const App = () => {
+const AppRoutes = () => {
   const { user, loading } = useUser();
 
   if (loading) {
-    return <div>Loading...</div>; // Or a global spinner
+    return <div className="flex justify-center items-center h-screen bg-gray-900 text-white">Initializing SimpliTrip...</div>;
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/trip/:id" element={<ProtectedRoute><TripDetailPage /></ProtectedRoute>} />
-      </Routes>
-    </Layout>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/trip/:id" 
+        element={
+          <ProtectedRoute>
+            <TripDetailPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <UserProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </UserProvider>
   );
 };
 
