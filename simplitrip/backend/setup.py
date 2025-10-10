@@ -16,7 +16,7 @@ setup(
     description="AI-powered travel planning backend for SimpliTrip",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/simplitrip",
+    url="https://github.com/AnirudhChhabra54/simplitrip",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -364,11 +364,23 @@ class ModelService:
         
         return self.itinerary_optimizer.validate_itinerary(itinerary)
     
-    # LLM Methods (Placeholder - will be implemented with actual LLM)
+    # LLM Methods (Using FREE Ollama + RAG)
     def parse_natural_language_query(self, query: str) -> Dict:
-        """Parse natural language query"""
-        # Simplified parsing for now
-        # In production, this would use fine-tuned LLM
+        """Parse natural language query using Ollama"""
+        if not self._initialized:
+            self.initialize()
+        
+        try:
+            from services.ollama_service import ollama_service
+            return ollama_service.parse_trip_query(query)
+        except Exception as e:
+            logger.error(f"Error parsing query with Ollama: {e}")
+            # Fallback to simple parsing
+            return self._fallback_parse_query(query)
+    
+    def _fallback_parse_query(self, query: str) -> Dict:
+        """Fallback query parsing"""
+        import re
         
         result = {
             'destination': None,
@@ -382,22 +394,30 @@ class ModelService:
         query_lower = query.lower()
         
         # Extract destination
-        destinations = ['goa', 'jaipur', 'kerala', 'udaipur', 'manali', 'delhi', 'mumbai']
+        destinations = ['goa', 'jaipur', 'kerala', 'udaipur', 'manali', 'delhi', 'mumbai', 'ladakh']
         for dest in destinations:
             if dest in query_lower:
                 result['destination'] = dest.title()
                 break
         
         # Extract duration
-        import re
         duration_match = re.search(r'(\d+)\s*day', query_lower)
         if duration_match:
             result['duration'] = int(duration_match.group(1))
         
         # Extract travelers
-        travelers_match = re.search(r'(\d+)\s*people|(\d+)\s*person', query_lower)
+        travelers_match = re.search(r'(\d+)\s*(?:people|person|traveler)', query_lower)
         if travelers_match:
-            result['travelers'] = int(travelers_match.group(1) or travelers_match.group(2))
+            result['travelers'] = int(travelers_match.group(1))
+        
+        # Extract budget
+        budget_match = re.search(r'(?:₹|rs\.?|rupees?)\s*(\d+(?:,\d+)*(?:k)?)', query_lower)
+        if budget_match:
+            budget_str = budget_match.group(1).replace(',', '')
+            if 'k' in budget_str:
+                result['budget'] = int(budget_str.replace('k', '')) * 1000
+            else:
+                result['budget'] = int(budget_str)
         
         # Extract preferences
         if 'relax' in query_lower or 'peaceful' in query_lower:
@@ -416,53 +436,124 @@ class ModelService:
         itinerary: Dict,
         style: str = 'engaging'
     ) -> Dict:
-        """Generate itinerary description"""
-        # Simplified generation for now
-        # In production, this would use fine-tuned LLM
+        """Generate itinerary description using Ollama"""
+        if not self._initialized:
+            self.initialize()
         
-        num_days = itinerary.get('num_days', 0)
-        total_places = itinerary.get('total_places', 0)
-        
-        description = f"Experience an amazing {num_days}-day journey visiting {total_places} incredible destinations. "
-        description += "This carefully crafted itinerary ensures you make the most of your time while exploring the best attractions. "
-        description += "Each day is optimized for minimal travel time and maximum enjoyment."
-        
-        highlights = [
-            f"Visit {total_places} top-rated attractions",
-            f"Optimized {num_days}-day schedule",
-            "Minimal travel time between locations",
-            "Flexible timing for each activity"
-        ]
-        
-        return {
-            'description': description,
-            'highlights': highlights
-        }
+        try:
+            from services.ollama_service import ollama_service
+            
+            num_days = itinerary.get('num_days', 0)
+            total_places = itinerary.get('total_places', 0)
+            destination = itinerary.get('destination', 'your destination')
+            
+            # Get highlights
+            highlights = []
+            if 'daily_plans' in itinerary:
+                for day in itinerary['daily_plans']:
+                    if 'places' in day:
+                        highlights.extend([p.get('name', '') for p in day['places'][:2]])
+            
+            description = ollama_service.generate_itinerary_description(
+                destination=destination,
+                duration=num_days,
+                highlights=highlights[:5],
+                style=style
+            )
+            
+            return {
+                'description': description,
+                'highlights': highlights[:5]
+            }
+        except Exception as e:
+            logger.error(f"Error generating description with Ollama: {e}")
+            # Fallback
+            num_days = itinerary.get('num_days', 0)
+            total_places = itinerary.get('total_places', 0)
+            return {
+                'description': f"Experience an amazing {num_days}-day journey visiting {total_places} incredible destinations.",
+                'highlights': [f"Visit {total_places} attractions", f"{num_days}-day optimized schedule"]
+            }
     
     def explain_recommendation(
         self,
         destination: str,
         user_profile: Dict[str, Any]
     ) -> Dict:
-        """Explain recommendation"""
-        # Simplified explanation for now
-        # In production, this would use fine-tuned LLM
+        """Explain recommendation using Ollama"""
+        if not self._initialized:
+            self.initialize()
         
-        explanation = f"We recommend {destination} based on your preferences. "
-        explanation += "This destination matches your interests and budget requirements. "
-        explanation += "It's highly rated by travelers with similar profiles."
+        try:
+            from services.ollama_service import ollama_service
+            
+            # Get match score from recommender if available
+            match_score = user_profile.get('match_score', 85)
+            
+            explanation = ollama_service.explain_recommendation(
+                destination=destination,
+                user_preferences=user_profile,
+                match_score=match_score
+            )
+            
+            key_factors = [
+                "Matches your preferred categories",
+                "Within your budget range",
+                f"{match_score}% compatibility score",
+                "Highly rated by similar travelers"
+            ]
+            
+            return {
+                'explanation': explanation,
+                'key_factors': key_factors
+            }
+        except Exception as e:
+            logger.error(f"Error explaining recommendation with Ollama: {e}")
+            return {
+                'explanation': f"{destination} matches your preferences and budget requirements.",
+                'key_factors': ["Matches preferences", "Within budget", "Highly rated"]
+            }
+    
+    def query_knowledge_base(self, question: str, destination: Optional[str] = None) -> Dict:
+        """Query RAG knowledge base"""
+        if not self._initialized:
+            self.initialize()
         
-        key_factors = [
-            "Matches your preferred category",
-            "Within your budget range",
-            "Highly rated by similar travelers",
-            "Best time to visit aligns with your dates"
-        ]
+        try:
+            from services.rag_service import rag_service
+            
+            filter_metadata = None
+            if destination:
+                filter_metadata = {"destination": destination}
+            
+            return rag_service.query_with_rag(
+                question=question,
+                n_context=3,
+                filter_metadata=filter_metadata
+            )
+        except Exception as e:
+            logger.error(f"Error querying knowledge base: {e}")
+            return {
+                'answer': "I don't have enough information to answer that question.",
+                'sources': [],
+                'context': []
+            }
+    
+    def get_destination_insights(self, destination: str) -> Dict:
+        """Get AI-powered destination insights"""
+        if not self._initialized:
+            self.initialize()
         
-        return {
-            'explanation': explanation,
-            'key_factors': key_factors
-        }
+        try:
+            from services.rag_service import rag_service
+            return rag_service.get_destination_info(destination)
+        except Exception as e:
+            logger.error(f"Error getting destination insights: {e}")
+            return {
+                'destination': destination,
+                'info': f"Limited information available for {destination}",
+                'sources': []
+            }
     
     # Data Methods
     def get_destinations(
@@ -501,6 +592,224 @@ class ModelService:
             df = df[df['Category'].str.contains(category, case=False, na=False)]
         
         return df.head(limit).to_dict('records')
+
+
+    def get_smart_suggestions(
+        self,
+        budget: Optional[float] = None,
+        duration: Optional[int] = None,
+        preferences: List[str] = None,
+        season: Optional[str] = None,
+        travelers: int = 1,
+        top_n: int = 5
+    ) -> List[Dict]:
+        """
+        Get smart destination suggestions using RAG + recommendations
+        """
+        if not self._initialized:
+            self.initialize()
+        
+        try:
+            from services.rag_service import rag_service
+            from services.ollama_service import ollama_service
+            
+            # Build search query
+            query_parts = []
+            if preferences:
+                query_parts.append(f"{', '.join(preferences)} destinations")
+            if season:
+                query_parts.append(f"best in {season}")
+            if budget:
+                query_parts.append(f"under ₹{budget}")
+            
+            search_query = " ".join(query_parts) if query_parts else "popular destinations in India"
+            
+            # Search RAG for relevant destinations
+            rag_results = rag_service.search(search_query, n_results=10)
+            
+            # Extract destinations from RAG results
+            destinations_found = set()
+            destination_info = {}
+            
+            for result in rag_results:
+                dest = result['metadata'].get('destination')
+                if dest and dest not in destinations_found:
+                    destinations_found.add(dest)
+                    destination_info[dest] = {
+                        'description': result['document'][:200],
+                        'metadata': result['metadata']
+                    }
+            
+            # Get recommendations from recommender
+            rec_preferences = {
+                'budget': budget,
+                'category': preferences[0] if preferences else None
+            }
+            
+            recommendations = self.get_recommendations(
+                preferences=rec_preferences,
+                top_n=top_n
+            )
+            
+            # Combine and format suggestions
+            suggestions = []
+            for rec in recommendations[:top_n]:
+                dest_name = rec.get('destination_name')
+                
+                # Estimate cost (simple calculation)
+                estimated_cost = budget if budget else 30000
+                if duration:
+                    estimated_cost = min(estimated_cost, duration * 6000 * travelers)
+                
+                # Generate reason using LLM
+                reason_prompt = f"In one sentence, explain why {dest_name} is perfect for {', '.join(preferences) if preferences else 'travelers'}"
+                reason = ollama_service.generate(reason_prompt, temperature=0.7, max_tokens=50)
+                
+                suggestions.append({
+                    'destination': dest_name,
+                    'reason': reason or f"Great destination for {', '.join(preferences) if preferences else 'travel'}",
+                    'estimated_cost': int(estimated_cost),
+                    'best_time': rec.get('best_time', 'Year-round'),
+                    'match_score': int(rec.get('score', 0) * 100),
+                    'highlights': preferences[:3] if preferences else ['Sightseeing', 'Culture', 'Food'],
+                    'category': rec.get('category', 'General'),
+                    'rating': rec.get('rating', 4.0)
+                })
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Error in get_smart_suggestions: {e}")
+            # Fallback to basic recommendations
+            return self.get_recommendations(preferences={'budget': budget}, top_n=top_n)
+    
+    def generate_complete_itinerary(
+        self,
+        destination: str,
+        duration: int,
+        budget: float,
+        travelers: int = 1,
+        preferences: List[str] = None,
+        accommodation_type: str = 'hotel',
+        meal_preference: str = 'veg'
+    ) -> Dict:
+        """
+        Generate complete day-by-day itinerary using RAG + LLM
+        """
+        if not self._initialized:
+            self.initialize()
+        
+        try:
+            from services.rag_service import rag_service
+            from services.ollama_service import ollama_service
+            
+            # Get destination information from RAG
+            dest_info = rag_service.get_destination_info(destination)
+            
+            # Search for activities and attractions
+            activities_query = f"things to do and attractions in {destination}"
+            activities_results = rag_service.search(activities_query, n_results=10)
+            
+            # Extract activities
+            activities = []
+            for result in activities_results:
+                activities.append(result['document'])
+            
+            # Build context for LLM
+            context = f"""Destination: {destination}
+Duration: {duration} days
+Budget: ₹{budget}
+Travelers: {travelers}
+Preferences: {', '.join(preferences) if preferences else 'General sightseeing'}
+Accommodation: {accommodation_type}
+Meals: {meal_preference}
+
+Destination Info:
+{dest_info.get('summary', '')}
+
+Available Activities:
+{chr(10).join(activities[:5])}"""
+            
+            # Generate itinerary using LLM
+            prompt = f"""{context}
+
+Create a detailed {duration}-day itinerary for {destination}. For each day, provide:
+1. Day title
+2. 3-4 activities with timings
+3. Estimated costs
+4. Meal suggestions
+
+Format as a structured plan. Be specific and practical."""
+            
+            system_prompt = "You are a travel planner. Create detailed, realistic itineraries with specific timings and costs."
+            
+            itinerary_text = ollama_service.generate(
+                prompt=prompt,
+                system=system_prompt,
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            # Calculate cost breakdown
+            per_person_per_day = budget / (duration * travelers)
+            
+            cost_breakdown = {
+                'accommodation': int(budget * 0.35),
+                'food': int(budget * 0.25),
+                'activities': int(budget * 0.25),
+                'transport': int(budget * 0.10),
+                'miscellaneous': int(budget * 0.05),
+                'total': int(budget)
+            }
+            
+            # Parse itinerary text into structured format (simplified)
+            daily_plans = []
+            for day in range(1, duration + 1):
+                daily_plans.append({
+                    'day': day,
+                    'title': f"Day {day} - Exploring {destination}",
+                    'activities': [
+                        {'time': '10:00 AM', 'activity': f'Morning activity', 'duration': '2 hours'},
+                        {'time': '1:00 PM', 'activity': 'Lunch', 'cost': int(per_person_per_day * 0.15)},
+                        {'time': '3:00 PM', 'activity': f'Afternoon sightseeing', 'duration': '3 hours'},
+                        {'time': '7:00 PM', 'activity': 'Dinner', 'cost': int(per_person_per_day * 0.20)}
+                    ],
+                    'total_cost': int(per_person_per_day * travelers)
+                })
+            
+            # Generate highlights
+            highlights = preferences[:4] if preferences else ['Sightseeing', 'Local cuisine', 'Culture', 'Relaxation']
+            
+            # Generate tips using LLM
+            tips_prompt = f"Give 3 practical travel tips for visiting {destination}"
+            tips_text = ollama_service.generate(tips_prompt, temperature=0.7, max_tokens=100)
+            tips = [tip.strip() for tip in tips_text.split('\n') if tip.strip()][:3]
+            
+            return {
+                'destination': destination,
+                'duration': duration,
+                'travelers': travelers,
+                'daily_plans': daily_plans,
+                'cost_breakdown': cost_breakdown,
+                'highlights': highlights,
+                'tips': tips or ['Book in advance', 'Try local food', 'Respect local culture'],
+                'generated_description': itinerary_text,
+                'best_time': dest_info.get('sources', [{}])[0].get('best_time', 'Year-round') if dest_info.get('sources') else 'Year-round'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating complete itinerary: {e}")
+            # Return basic itinerary
+            return {
+                'destination': destination,
+                'duration': duration,
+                'travelers': travelers,
+                'daily_plans': [],
+                'cost_breakdown': {'total': budget},
+                'highlights': preferences or [],
+                'tips': ['Plan ahead', 'Stay hydrated', 'Enjoy your trip!'],
+                'error': str(e)
+            }
 
 
 # Create global instance

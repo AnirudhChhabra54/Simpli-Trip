@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { loginUser, registerUser } from '../services/auth';
 import { useUser } from '../context/UserContext';
 
@@ -37,7 +38,12 @@ const LoginPage = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-            <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg">
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg"
+            >
                 <h1 className="text-3xl font-bold text-center">{isSignUp ? 'Sign Up' : 'Login'}</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
@@ -60,16 +66,18 @@ const LoginPage = () => {
                             required
                         />
                     </div>
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         type="submit"
                         disabled={loading}
                         className="w-full py-2 font-bold text-white bg-cyan-600 rounded-md hover:bg-cyan-700 disabled:bg-gray-500"
                     >
                         {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
-                    </button>
+                    </motion.button>
                     {error && <p className="text-sm text-red-500">{error}</p>}
                 </form>
-            </div>
+            </motion.div>
         </div>
     );
 };
