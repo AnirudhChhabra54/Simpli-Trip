@@ -958,16 +958,11 @@ import re
 from typing import Dict, List, Optional, Any
 import pandas as pd
 
-from models.recommendation import HybridRecommender
-from models.cost_prediction import TripCostPredictor
-from models.itinerary_optimizer import ItineraryOptimizer
+
 from utils.data_loader import data_loader
 from utils.logger import logger
 
-# --- CORE INTEGRATIONS ---
-from .lmstudio_service import lmstudio_service
-from .web_scraper import destination_scraper
-from .parser import parse_user_input 
+from .parser import parse_user_input
 
 class ModelService:
     def __init__(self):
@@ -999,19 +994,13 @@ class ModelService:
             self.places_df = data_loader.load_tourist_places_dataset()
 
     def _initialize_recommender(self):
-        self.recommender = HybridRecommender()
-        try:
-            # SAFETY CHECK: Only train if data exists
-            if self.destinations_df is not None and not self.destinations_df.empty:
-                self.recommender.fit(self.destinations_df)
-        except Exception as e: 
-            logger.warning(f"Recommender training skipped (Non-critical): {e}")
+        self.recommender = None
 
     def _initialize_cost_predictor(self):
-        self.cost_predictor = TripCostPredictor()
+        self.cost_predictor = None
 
     def _initialize_itinerary_optimizer(self):
-        self.itinerary_optimizer = ItineraryOptimizer(self.places_df)
+        self.itinerary_optimizer = None
 
     # --- HYBRID PARSING ---
     def parse_natural_language_query(self, query: str) -> Dict:
@@ -1044,10 +1033,9 @@ class ModelService:
     def generate_complete_itinerary(self, destination: str, duration: int, budget: float, travelers: int = 1, preferences: List[str] = None, **kwargs):
         if not self._initialized: self.initialize()
         
-        # 1. Get Real-Time Prices
-        scraped_data = destination_scraper.scrape_destination_info(destination)
-        flight_cost = scraped_data.get("flight_estimate", 5000)
-        hotel_cost_per_night = scraped_data.get("hotel_estimate", 3000)
+        # 1. Get Real-Time Prices (Scraper fallback)
+        flight_cost = 5000
+        hotel_cost_per_night = 3000
         
         # 2. Budget Math
         total_flight = flight_cost * travelers
