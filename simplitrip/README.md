@@ -96,4 +96,11 @@ npm start
 The SimpliTrip repository strongly abides by **YAGNI (You Aren't Gonna Need It)**. 
 Over the course of development, extraneous integrations (like heavy Web Scrapers, dead TSP engines, and unused RAG vector stores) were aggressively pruned. This ensures that the application you clone is incredibly lean, focusing purely on what makes the app excellent: local LLM reasoning combined with reliable external context.
 
+## 🧪 QA & Testing Status (Late 2025 Updates)
+The system was recently rigorously validated:
+- **[Pass]** Core routing and endpoint health checks.
+- **[Pass]** Dynamic NLP mapping using LM Studio (JSON coercion works perfectly).
+- **[Pass]** Nominatim and Open-Meteo external service integrations.
+- **[Pass]** Final prompt synthesis and markdown itinerary generation.
+
 *Made with ❤️ for modern travelers.*
