@@ -2,9 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import MyTripsPage from './pages/MyTripsPage';
 import TripDetailPage from './pages/TripDetailPage';
 import TripPlannerPage from './pages/TripPlannerPage';
+import ChatPage from './pages/ChatPage';
 import LandingPage from './pages/LandingPage';
+import Header from './components/Header';
 import { UserProvider, useUser } from './context/UserContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -22,9 +25,12 @@ const AppRoutes = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-gray-900 text-white">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-cyan-500 mb-4"></div>
-        <p className="text-xl font-semibold">Initializing SimpliTrip...</p>
+      <div className="flex flex-col h-screen bg-gray-900 text-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-cyan-500 mb-4"></div>
+          <p className="text-xl font-semibold ml-4">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -42,12 +48,28 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/my-trips" 
+        element={
+          <ProtectedRoute>
+            <MyTripsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/plan-trip" 
         element={
           <ProtectedRoute>
             <TripPlannerPage />
           </ProtectedRoute>
         } 
+      />
+      <Route 
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/trip/:id" 

@@ -1,188 +1,134 @@
 #!/usr/bin/env python3
 """
-SimpliTrip - Dataset Download Script
-Downloads all required datasets from Kaggle for training ML models
+SimpliTrip - Dataset Download Script (LOCAL-FIRST MODE)
+
+This script is now a NO-OP by default. SimpliTrip uses local datasets.
+
+To use Kaggle datasets (optional):
+  1. Set up Kaggle API credentials (~/.kaggle/kaggle.json)
+  2. Run with flag: python scripts/download_datasets.py --kaggle-download
+
+For normal usage, manually place your datasets:
+  - CSV files: datasets/destinations/*.csv
+  - JSONL file: data/docs.jsonl
+  - Or run: python scripts/csv_to_jsonl.py to convert CSV to JSONL
 """
 
-import os
 import sys
-from pathlib import Path
+import argparse
 import logging
+from pathlib import Path
 
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
-
-from utils.logger import setup_logger
-
-logger = setup_logger()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("download_datasets")
 
 
-def check_kaggle_setup():
-    """Check if Kaggle API is properly configured"""
-    kaggle_json = Path.home() / '.kaggle' / 'kaggle.json'
-    
-    if not kaggle_json.exists():
-        logger.error("Kaggle API credentials not found!")
-        logger.info("Please follow these steps:")
-        logger.info("1. Go to https://www.kaggle.com/settings")
-        logger.info("2. Scroll to 'API' section")
-        logger.info("3. Click 'Create New API Token'")
-        logger.info("4. Move kaggle.json to ~/.kaggle/")
-        logger.info("5. Run: chmod 600 ~/.kaggle/kaggle.json")
-        return False
-    
-    # Check permissions
-    if oct(kaggle_json.stat().st_mode)[-3:] != '600':
-        logger.warning("Kaggle credentials have incorrect permissions")
-        logger.info("Run: chmod 600 ~/.kaggle/kaggle.json")
-        return False
-    
-    logger.info("✅ Kaggle API credentials found and configured correctly")
-    return True
+def print_instructions():
+    """Print instructions for manual dataset setup"""
+    print("=" * 70)
+    print("SimpliTrip - Local-First Dataset Setup")
+    print("=" * 70)
+    print()
+    print("📁 This project now uses LOCAL datasets (no automatic Kaggle downloads).")
+    print()
+    print("To set up your datasets:")
+    print()
+    print("Option 1: Use CSV files")
+    print("  1. Place your CSV files in: datasets/destinations/")
+    print("     Example: datasets/destinations/india_destinations.csv")
+    print()
+    print("  2. Convert to JSONL format:")
+    print("     python scripts/csv_to_jsonl.py --input datasets/destinations/*.csv --out data/docs.jsonl")
+    print()
+    print("  3. Build embeddings:")
+    print("     python scripts/build_embeddings.py")
+    print()
+    print("Option 2: Use JSONL directly")
+    print("  1. Place your docs.jsonl file in: data/docs.jsonl")
+    print("     Format: one JSON object per line")
+    print('     Example: {"id":"doc1","text":"Description...","meta":{}}')
+    print()
+    print("  2. Build embeddings:")
+    print("     python scripts/build_embeddings.py")
+    print()
+    print("Option 3: Use Kaggle datasets (optional)")
+    print("  1. Set up Kaggle API: ~/.kaggle/kaggle.json")
+    print("  2. Run: python scripts/download_datasets.py --kaggle-download")
+    print()
+    print("=" * 70)
+    print()
+    print("Current directory structure:")
+    print("  data/")
+    print("    ├── docs.jsonl          (JSONL format for RAG)")
+    print("    ├── explore_india.csv   (optional CSV)")
+    print("    └── chroma_db/          (vector database)")
+    print("  datasets/")
+    print("    └── destinations/       (place CSV files here)")
+    print()
+    print("=" * 70)
 
 
-def download_dataset(dataset_name, output_dir):
-    """Download a dataset from Kaggle"""
+def attempt_kaggle_download():
+    """Attempt to download datasets from Kaggle (requires credentials)"""
     try:
-        import kaggle
-        
-        logger.info(f"📥 Downloading: {dataset_name}")
-        
-        # Create output directory
-        output_path = Path(output_dir) / dataset_name.replace('/', '_')
-        output_path.mkdir(parents=True, exist_ok=True)
-        
-        # Download dataset
-        kaggle.api.dataset_download_files(
-            dataset_name,
-            path=str(output_path),
-            unzip=True
-        )
-        
-        logger.info(f"✅ Downloaded: {dataset_name}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to download {dataset_name}: {str(e)}")
+        from kaggle import api as kaggle_api
+    except ImportError:
+        logger.error("Kaggle package not installed. Run: pip install kaggle")
         return False
+    
+    # Check credentials
+    kaggle_json = Path.home() / '.kaggle' / 'kaggle.json'
+    if not kaggle_json.exists():
+        logger.error("Kaggle credentials not found at ~/.kaggle/kaggle.json")
+        logger.info("Get your API token from: https://www.kaggle.com/settings")
+        return False
+    
+    logger.info("Kaggle credentials found. Attempting download...")
+    
+    # Define datasets
+    datasets = [
+        "surajjha101/explore-india-a-tourist-destination-dataset",
+    ]
+    
+    data_dir = Path("./data")
+    data_dir.mkdir(exist_ok=True)
+    
+    success = False
+    for dataset_id in datasets:
+        try:
+            logger.info("Downloading: %s", dataset_id)
+            kaggle_api.dataset_download_files(dataset_id, path=str(data_dir), unzip=True, quiet=False)
+            logger.info("✅ Downloaded: %s", dataset_id)
+            success = True
+        except Exception as e:
+            logger.error("❌ Failed to download %s: %s", dataset_id, e)
+    
+    if success:
+        logger.info("Download complete. Check data/ directory for CSV files.")
+        logger.info("Next: Run python scripts/csv_to_jsonl.py to convert to JSONL format.")
+    
+    return success
 
 
 def main():
-    """Main function to download all datasets"""
+    parser = argparse.ArgumentParser(description="SimpliTrip Dataset Setup (Local-First)")
+    parser.add_argument(
+        "--kaggle-download",
+        action="store_true",
+        help="Attempt to download datasets from Kaggle (requires API credentials)"
+    )
     
-    print("=" * 60)
-    print("SimpliTrip - Dataset Download Script")
-    print("=" * 60)
-    print()
+    args = parser.parse_args()
     
-    # Check Kaggle setup
-    if not check_kaggle_setup():
-        print()
-        print("❌ Kaggle API not configured. Please set it up first.")
-        print("   See: DATASETS_AND_IMAGES_GUIDE.md for instructions")
-        return 1
-    
-    # Define datasets to download
-    datasets = [
-        {
-            'name': 'surajjha101/explore-india-a-tourist-destination-dataset',
-            'description': 'Explore India Tourist Destinations (156 destinations)',
-            'size': '~50KB'
-        },
-        {
-            'name': 'rajuprasad23/famous-indian-tourist-places',
-            'description': 'Famous Indian Tourist Places (325 places)',
-            'size': '~100KB'
-        },
-        {
-            'name': 'sagnik1511/airline-ticket-price-in-india-makemytrip',
-            'description': 'Airline Ticket Prices India (5M+ records)',
-            'size': '~500MB'
-        },
-        {
-            'name': 'ashishguptaji/tripadvisor-indian-hotel-reviews',
-            'description': 'TripAdvisor Indian Hotel Reviews (11,800 reviews)',
-            'size': '~5MB'
-        },
-        {
-            'name': 'akshat59/traveltalesindia-travelogue-dataset',
-            'description': 'Travel Tales India Travelogues (3,300+ stories)',
-            'size': '~10MB'
-        }
-    ]
-    
-    # Set download directory
-    download_dir = Path(__file__).parent.parent / 'data' / 'downloads'
-    download_dir.mkdir(parents=True, exist_ok=True)
-    
-    print(f"📁 Download directory: {download_dir}")
-    print()
-    print(f"📊 Datasets to download: {len(datasets)}")
-    print()
-    
-    # Show dataset info
-    for i, dataset in enumerate(datasets, 1):
-        print(f"{i}. {dataset['description']}")
-        print(f"   Size: {dataset['size']}")
-        print()
-    
-    # Ask for confirmation
-    response = input("Do you want to proceed with download? (y/n): ")
-    if response.lower() != 'y':
-        print("Download cancelled.")
+    if args.kaggle_download:
+        logger.info("Kaggle download mode enabled")
+        success = attempt_kaggle_download()
+        return 0 if success else 1
+    else:
+        # Default: print instructions
+        print_instructions()
         return 0
-    
-    print()
-    print("Starting downloads...")
-    print()
-    
-    # Download each dataset
-    success_count = 0
-    failed_datasets = []
-    
-    for i, dataset in enumerate(datasets, 1):
-        print(f"[{i}/{len(datasets)}] {dataset['description']}")
-        
-        if download_dataset(dataset['name'], download_dir):
-            success_count += 1
-        else:
-            failed_datasets.append(dataset['name'])
-        
-        print()
-    
-    # Summary
-    print("=" * 60)
-    print("Download Summary")
-    print("=" * 60)
-    print(f"✅ Successful: {success_count}/{len(datasets)}")
-    print(f"❌ Failed: {len(failed_datasets)}/{len(datasets)}")
-    
-    if failed_datasets:
-        print()
-        print("Failed datasets:")
-        for dataset in failed_datasets:
-            print(f"  - {dataset}")
-        print()
-        print("💡 Note: The app will work with mock data if datasets fail to download")
-    
-    print()
-    print("📁 Downloaded files location:")
-    print(f"   {download_dir}")
-    print()
-    
-    if success_count > 0:
-        print("✅ Next steps:")
-        print("   1. Process the datasets:")
-        print("      python -c \"from utils.data_loader import DataLoader; DataLoader().load_all_datasets()\"")
-        print()
-        print("   2. Train the models:")
-        print("      python scripts/train_models.py")
-        print()
-        print("   3. Restart the backend:")
-        print("      python main.py")
-    
-    return 0 if success_count > 0 else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

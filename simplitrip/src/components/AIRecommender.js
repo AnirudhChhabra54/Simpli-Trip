@@ -2,7 +2,7 @@ import React from 'react';
 
 const AIRecommender = ({ type }) => {
   const recommendations = {
-    dashboard: "Based on your travel history, we recommend a trip to Bali, Indonesia.",
+    dashboard: "Create trips to make a recommendation .",
     trip: "We suggest reducing your restaurant budget by $50 and allocating it towards activities to maximize your experience."
   };
 

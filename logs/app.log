@@ -82,3 +82,232 @@ HTTP response body: b'{"code":403,"message":"Permission \\u0027datasets.get\\u00
 2025-10-10 02:52:40 - simplitrip - INFO - rag_service.py:123 - Added 10 sample documents to knowledge base
 2025-10-10 02:54:37 - simplitrip - INFO - rag_service.py:143 - Generating embeddings for 8 documents...
 2025-10-10 02:54:38 - simplitrip - INFO - rag_service.py:159 - Added 8 documents to collection
+2025-12-07 00:32:05 - simplitrip - INFO - ollama_service.py:26 - Ollama stub loaded (not configured).
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:19 - ============================================================
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:20 - 🧪 TESTING MODEL SERVICE SETUP
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:21 - ============================================================
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:873 - Initializing Model Service...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:893 - Loading datasets...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:903 - Processed data not found, loading raw datasets...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:910 - Saved processed datasets
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:986 - Initializing recommendation system...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:1001 - Training new recommender...
+2025-12-07 00:32:05 - simplitrip - INFO - recommendation.py:61 - Fitting content-based recommender...
+2025-12-07 00:32:05 - simplitrip - WARNING - model_service.py:1009 - Recommender training failed: "['State', 'Best Time to Visit'] not in index"
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:1013 - Initializing cost prediction models...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:1029 - Cost predictor initialized with default models
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:1033 - Initializing itinerary optimizer...
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:1036 - Itinerary optimizer initialized
+2025-12-07 00:32:05 - simplitrip - INFO - model_service.py:885 - Model Service initialized successfully
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:31 - ✅ ModelService initialized successfully
+2025-12-07 00:32:05 - simplitrip - ERROR - test_backend_setup.py:79 - ❌ Destination recommendations         - MISSING
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Nearby recommendations              - get_nearby_recommendations
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Smart suggestions                   - get_smart_suggestions
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Flight cost prediction              - predict_flight_cost
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Accommodation cost prediction       - predict_accommodation_cost
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Total trip cost prediction          - predict_total_trip_cost
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Budget optimization                 - optimize_budget
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary optimization              - optimize_itinerary
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary validation                - validate_itinerary
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Complete itinerary generation       - generate_complete_itinerary
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Query parsing                       - parse_natural_language_query
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary description               - generate_itinerary_description
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Recommendation explanation          - explain_recommendation
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get destinations                    - get_destinations
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get places                          - get_places
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Knowledge base query                - query_knowledge_base
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination insights                - get_destination_insights
+2025-12-07 00:32:05 - simplitrip - ERROR - test_backend_setup.py:79 - ❌ RAG statistics                      - MISSING
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:99 - ⚠️ get_destinations() - object list can't be used in 'await' expression
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:105 - ⚠️ predict_flight_cost() - ModelService.predict_flight_cost() missing 2 required positional arguments: 'to_city' and 'travel_date'
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:108 - ============================================================
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:109 - 📊 TEST SUMMARY
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:110 - ============================================================
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:111 - ✅ Available methods: 16/18
+2025-12-07 00:32:05 - simplitrip - INFO - test_backend_setup.py:112 - ❌ Missing methods: 2
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:115 - Missing method implementations:
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:117 -    - get_destination_recommendations
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:117 -    - get_rag_stats
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:126 - ⚠️ Shutdown issue: 'ModelService' object has no attribute 'shutdown'
+2025-12-07 00:32:05 - simplitrip - WARNING - test_backend_setup.py:138 - ⚠️ Some tests failed. Check the output above for details.
+2025-12-07 00:34:08 - simplitrip - INFO - ollama_service.py:26 - Ollama stub loaded (not configured).
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:19 - ============================================================
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:20 - 🧪 TESTING MODEL SERVICE SETUP
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:21 - ============================================================
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:873 - Initializing Model Service...
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:897 - Loading datasets...
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:904 - Loaded processed datasets
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:990 - Initializing recommendation system...
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:1005 - Training new recommender...
+2025-12-07 00:34:08 - simplitrip - INFO - recommendation.py:61 - Fitting content-based recommender...
+2025-12-07 00:34:08 - simplitrip - WARNING - model_service.py:1013 - Recommender training failed: "['State', 'Best Time to Visit'] not in index"
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:1017 - Initializing cost prediction models...
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:1033 - Cost predictor initialized with default models
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:1037 - Initializing itinerary optimizer...
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:1040 - Itinerary optimizer initialized
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:885 - Model Service initialized successfully
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:31 - ✅ ModelService initialized successfully
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination recommendations         - get_destination_recommendations
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Nearby recommendations              - get_nearby_recommendations
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Smart suggestions                   - get_smart_suggestions
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Flight cost prediction              - predict_flight_cost
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Accommodation cost prediction       - predict_accommodation_cost
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Total trip cost prediction          - predict_total_trip_cost
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Budget optimization                 - optimize_budget
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary optimization              - optimize_itinerary
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary validation                - validate_itinerary
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Complete itinerary generation       - generate_complete_itinerary
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Query parsing                       - parse_natural_language_query
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary description               - generate_itinerary_description
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Recommendation explanation          - explain_recommendation
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get destinations                    - get_destinations
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get places                          - get_places
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Knowledge base query                - query_knowledge_base
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination insights                - get_destination_insights
+2025-12-07 00:34:08 - simplitrip - ERROR - test_backend_setup.py:79 - ❌ RAG statistics                      - MISSING
+2025-12-07 00:34:08 - simplitrip - WARNING - test_backend_setup.py:99 - ⚠️ get_destinations() - object list can't be used in 'await' expression
+2025-12-07 00:34:08 - simplitrip - WARNING - test_backend_setup.py:105 - ⚠️ predict_flight_cost() - ModelService.predict_flight_cost() missing 2 required positional arguments: 'to_city' and 'travel_date'
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:108 - ============================================================
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:109 - 📊 TEST SUMMARY
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:110 - ============================================================
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:111 - ✅ Available methods: 17/18
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:112 - ❌ Missing methods: 1
+2025-12-07 00:34:08 - simplitrip - WARNING - test_backend_setup.py:115 - Missing method implementations:
+2025-12-07 00:34:08 - simplitrip - WARNING - test_backend_setup.py:117 -    - get_rag_stats
+2025-12-07 00:34:08 - simplitrip - INFO - model_service.py:893 - ModelService shutdown.
+2025-12-07 00:34:08 - simplitrip - INFO - test_backend_setup.py:124 - ✅ Shutdown successful
+2025-12-07 00:34:08 - simplitrip - WARNING - test_backend_setup.py:138 - ⚠️ Some tests failed. Check the output above for details.
+2025-12-07 00:35:20 - simplitrip - INFO - ollama_service.py:26 - Ollama stub loaded (not configured).
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:19 - ============================================================
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:20 - 🧪 TESTING MODEL SERVICE SETUP
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:21 - ============================================================
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:873 - Initializing Model Service...
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:897 - Loading datasets...
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:904 - Loaded processed datasets
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:990 - Initializing recommendation system...
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:1005 - Training new recommender...
+2025-12-07 00:35:20 - simplitrip - INFO - recommendation.py:61 - Fitting content-based recommender...
+2025-12-07 00:35:20 - simplitrip - WARNING - model_service.py:1013 - Recommender training failed: "['State', 'Best Time to Visit'] not in index"
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:1017 - Initializing cost prediction models...
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:1033 - Cost predictor initialized with default models
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:1037 - Initializing itinerary optimizer...
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:1040 - Itinerary optimizer initialized
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:885 - Model Service initialized successfully
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:31 - ✅ ModelService initialized successfully
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination recommendations         - get_destination_recommendations
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Nearby recommendations              - get_nearby_recommendations
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Smart suggestions                   - get_smart_suggestions
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Flight cost prediction              - predict_flight_cost
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Accommodation cost prediction       - predict_accommodation_cost
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Total trip cost prediction          - predict_total_trip_cost
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Budget optimization                 - optimize_budget
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary optimization              - optimize_itinerary
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary validation                - validate_itinerary
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Complete itinerary generation       - generate_complete_itinerary
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Query parsing                       - parse_natural_language_query
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary description               - generate_itinerary_description
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Recommendation explanation          - explain_recommendation
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get destinations                    - get_destinations
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get places                          - get_places
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Knowledge base query                - query_knowledge_base
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination insights                - get_destination_insights
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:73 - ✅ RAG statistics                      - get_rag_stats
+2025-12-07 00:35:20 - simplitrip - WARNING - test_backend_setup.py:99 - ⚠️ get_destinations() - object list can't be used in 'await' expression
+2025-12-07 00:35:20 - simplitrip - WARNING - test_backend_setup.py:105 - ⚠️ predict_flight_cost() - ModelService.predict_flight_cost() missing 2 required positional arguments: 'to_city' and 'travel_date'
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:108 - ============================================================
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:109 - 📊 TEST SUMMARY
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:110 - ============================================================
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:111 - ✅ Available methods: 18/18
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:112 - ❌ Missing methods: 0
+2025-12-07 00:35:20 - simplitrip - INFO - model_service.py:893 - ModelService shutdown.
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:124 - ✅ Shutdown successful
+2025-12-07 00:35:20 - simplitrip - INFO - test_backend_setup.py:135 - 🎉 ALL TESTS PASSED! Backend is ready to use.
+2025-12-07 00:40:39 - simplitrip - INFO - ollama_service.py:26 - Ollama stub loaded (not configured).
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:19 - ============================================================
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:20 - 🧪 TESTING MODEL SERVICE SETUP
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:21 - ============================================================
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:873 - Initializing Model Service...
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:897 - Loading datasets...
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:904 - Loaded processed datasets
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:990 - Initializing recommendation system...
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:1005 - Training new recommender...
+2025-12-07 00:40:39 - simplitrip - INFO - recommendation.py:61 - Fitting content-based recommender...
+2025-12-07 00:40:39 - simplitrip - WARNING - model_service.py:1013 - Recommender training failed: "['State', 'Best Time to Visit'] not in index"
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:1017 - Initializing cost prediction models...
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:1033 - Cost predictor initialized with default models
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:1037 - Initializing itinerary optimizer...
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:1040 - Itinerary optimizer initialized
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:885 - Model Service initialized successfully
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:31 - ✅ ModelService initialized successfully
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination recommendations         - get_destination_recommendations
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Nearby recommendations              - get_nearby_recommendations
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Smart suggestions                   - get_smart_suggestions
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Flight cost prediction              - predict_flight_cost
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Accommodation cost prediction       - predict_accommodation_cost
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Total trip cost prediction          - predict_total_trip_cost
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Budget optimization                 - optimize_budget
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary optimization              - optimize_itinerary
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary validation                - validate_itinerary
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Complete itinerary generation       - generate_complete_itinerary
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Query parsing                       - parse_natural_language_query
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary description               - generate_itinerary_description
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Recommendation explanation          - explain_recommendation
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get destinations                    - get_destinations
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get places                          - get_places
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Knowledge base query                - query_knowledge_base
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination insights                - get_destination_insights
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:73 - ✅ RAG statistics                      - get_rag_stats
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:99 - ✅ get_destinations() - Returned 5 items
+2025-12-07 00:40:39 - simplitrip - WARNING - test_backend_setup.py:111 - ⚠️ predict_flight_cost() - Model not fitted. Call fit() first.
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:114 - ============================================================
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:115 - 📊 TEST SUMMARY
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:116 - ============================================================
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:117 - ✅ Available methods: 18/18
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:118 - ❌ Missing methods: 0
+2025-12-07 00:40:39 - simplitrip - INFO - model_service.py:893 - ModelService shutdown.
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:130 - ✅ Shutdown successful
+2025-12-07 00:40:39 - simplitrip - INFO - test_backend_setup.py:141 - 🎉 ALL TESTS PASSED! Backend is ready to use.
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:19 - ============================================================
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:20 - 🧪 TESTING MODEL SERVICE SETUP
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:21 - ============================================================
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:874 - Initializing Model Service...
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:898 - Loading datasets...
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:905 - Loaded processed datasets
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:991 - Initializing recommendation system...
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:1006 - Training new recommender...
+2025-12-07 00:59:03 - simplitrip - INFO - recommendation.py:61 - Fitting content-based recommender...
+2025-12-07 00:59:03 - simplitrip - WARNING - model_service.py:1014 - Recommender training failed: "['State', 'Best Time to Visit'] not in index"
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:1018 - Initializing cost prediction models...
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:1034 - Cost predictor initialized with default models
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:1038 - Initializing itinerary optimizer...
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:1041 - Itinerary optimizer initialized
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:886 - Model Service initialized successfully
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:31 - ✅ ModelService initialized successfully
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination recommendations         - get_destination_recommendations
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Nearby recommendations              - get_nearby_recommendations
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Smart suggestions                   - get_smart_suggestions
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Flight cost prediction              - predict_flight_cost
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Accommodation cost prediction       - predict_accommodation_cost
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Total trip cost prediction          - predict_total_trip_cost
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Budget optimization                 - optimize_budget
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary optimization              - optimize_itinerary
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary validation                - validate_itinerary
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Complete itinerary generation       - generate_complete_itinerary
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Query parsing                       - parse_natural_language_query
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Itinerary description               - generate_itinerary_description
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Recommendation explanation          - explain_recommendation
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get destinations                    - get_destinations
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Get places                          - get_places
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Knowledge base query                - query_knowledge_base
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ Destination insights                - get_destination_insights
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:73 - ✅ RAG statistics                      - get_rag_stats
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:99 - ✅ get_destinations() - Returned 5 items
+2025-12-07 00:59:03 - simplitrip - WARNING - test_backend_setup.py:111 - ⚠️ predict_flight_cost() - Model not fitted. Call fit() first.
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:114 - ============================================================
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:115 - 📊 TEST SUMMARY
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:116 - ============================================================
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:117 - ✅ Available methods: 18/18
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:118 - ❌ Missing methods: 0
+2025-12-07 00:59:03 - simplitrip - INFO - model_service.py:894 - ModelService shutdown.
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:130 - ✅ Shutdown successful
+2025-12-07 00:59:03 - simplitrip - INFO - test_backend_setup.py:141 - 🎉 ALL TESTS PASSED! Backend is ready to use.

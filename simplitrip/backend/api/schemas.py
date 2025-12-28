@@ -219,7 +219,164 @@ class RecommendationExplanationResponse(BaseModel):
     key_factors: List[str]
 
 
-# General Schemas
+# ============================================================================
+# LOCATION SCHEMAS (for Nominatim OSM API)
+# ============================================================================
+
+class LocationCoords(BaseModel):
+    """Location with coordinates"""
+    name: str = Field(..., description="Location name")
+    lat: float = Field(..., description="Latitude")
+    lon: float = Field(..., description="Longitude")
+    display_name: Optional[str] = None
+    place_type: Optional[str] = None
+
+
+class LocationSearchResult(BaseModel):
+    """Result from location search"""
+    name: str
+    lat: float
+    lon: float
+    state: Optional[str] = None
+    country: Optional[str] = None
+    importance: float = Field(0.0, description="Relevance score 0-1")
+
+
+class BoundingBox(BaseModel):
+    """Bounding box for map display"""
+    min_lat: float
+    max_lat: float
+    min_lon: float
+    max_lon: float
+
+
+class LocationSearchRequest(BaseModel):
+    """Request to search for locations"""
+    query: str = Field(..., description="Search query (city name, landmark, etc)")
+    limit: int = Field(10, description="Max results to return")
+    country: str = Field("India", description="Country to search in")
+
+
+class LocationSearchResponse(BaseModel):
+    """Response from location search"""
+    results: List[LocationSearchResult]
+    total_count: int
+    status: str = "success"
+
+
+class LocationAutocompleteRequest(BaseModel):
+    """Request for location autocomplete"""
+    query: str = Field(..., description="Partial location name")
+    limit: int = Field(5, description="Max suggestions")
+
+
+class LocationAutocompleteResponse(BaseModel):
+    """Autocomplete suggestions"""
+    suggestions: List[str]
+    status: str = "success"
+
+
+# ============================================================================
+# WEATHER SCHEMAS (for Open-Meteo API)
+# ============================================================================
+
+class CurrentWeatherResponse(BaseModel):
+    """Current weather data"""
+    temperature: float = Field(..., description="Temperature in Celsius")
+    feels_like: float
+    humidity: int
+    condition: str = Field(..., description="Weather condition description")
+    condition_code: int
+    precipitation: float = Field(..., description="Precipitation in mm")
+    cloudiness: int
+    wind_speed: float
+    visibility: int
+    uv_index: float
+    timestamp: str
+
+
+class DailyForecastResponse(BaseModel):
+    """Daily weather forecast"""
+    date: str = Field(..., description="YYYY-MM-DD")
+    max_temp: float
+    min_temp: float
+    avg_temp: float
+    precipitation: float
+    precipitation_prob: int
+    condition: str
+    wind_speed_max: float
+    uv_index_max: float
+    sunrise: str = Field(..., description="HH:MM format")
+    sunset: str = Field(..., description="HH:MM format")
+
+
+class WeatherForecastResponse(BaseModel):
+    """Complete weather forecast"""
+    location: str
+    lat: float
+    lon: float
+    current: CurrentWeatherResponse
+    daily: List[DailyForecastResponse]
+    status: str = "success"
+
+
+class WeatherRequestParams(BaseModel):
+    """Request parameters for weather"""
+    lat: float = Field(..., description="Latitude")
+    lon: float = Field(..., description="Longitude")
+    location_name: str = Field(..., description="Display name")
+    days: int = Field(7, description="Forecast days (1-16)")
+
+
+class BestSeasonResponse(BaseModel):
+    """Best time to visit a destination"""
+    destination: str
+    months: List[str]
+    reason: str
+    avg_temp: float
+    rainfall_season: str
+    dry_season: str
+    status: str = "success"
+
+
+# ============================================================================
+# ENRICHED CONTEXT SCHEMAS (combining Location + Weather + RAG for LLM)
+# ============================================================================
+
+class DestinationContext(BaseModel):
+    """Complete context about a destination for LLM"""
+    destination: str
+    state: str
+    location: LocationCoords
+    current_weather: Optional[CurrentWeatherResponse] = None
+    forecast: Optional[List[DailyForecastResponse]] = None
+    best_season: Optional[BestSeasonResponse] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    rating: Optional[float] = None
+
+
+class TripContextRequest(BaseModel):
+    """Request to get enriched context for trip planning"""
+    destination: str = Field(..., description="Destination name")
+    travel_dates: Optional[List[str]] = Field(None, description="List of dates YYYY-MM-DD")
+    budget: Optional[float] = None
+    preferences: Optional[List[str]] = None
+
+
+class TripContextResponse(BaseModel):
+    """Enriched context response for LLM"""
+    destination_context: DestinationContext
+    travel_advisories: Optional[str] = None
+    packing_suggestions: Optional[str] = None
+    activity_recommendations: Optional[str] = None
+    status: str = "success"
+
+
+# ============================================================================
+# GENERAL SCHEMAS
+# ============================================================================
+
 class HealthCheckResponse(BaseModel):
     """Health check response"""
     status: str
