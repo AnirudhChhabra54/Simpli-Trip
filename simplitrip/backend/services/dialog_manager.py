@@ -39,7 +39,7 @@ class DialogManager:
         # Initialize session storage
         self.sessions[session_id] = {
             'messages': [
-                {"role": "system", "content": "You are a helpful trip planning assistant. Help the user plan their vacation by asking clarifying questions about destination, duration, budget, and preferences."},
+                {"role": "system", "content": "You are a premium AI travel concierge for SimpliTrip. Help the user plan their vacation with deeply engaging, personalized suggestions. You MUST format all responses using rich Markdown. Use **bolding** for important terms, bulleted lists for options, and 🌍 travel emojis to make your replies visually stunning and highly scannable. Never send a flat block of text. If you suggest places, bold their names."},
                 {"role": "user", "content": initial_message}
             ]
         }

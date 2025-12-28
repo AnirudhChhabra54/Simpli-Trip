@@ -177,3 +177,44 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.3) !important;
   transition: all 0.3s ease;
 }
+
+/* --- NEW: React Markdown Styling --- */
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3 {
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #cffafe;
+}
+
+.chat-markdown p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.chat-markdown ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.chat-markdown ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.chat-markdown li {
+  margin-bottom: 0.25rem;
+}
+
+.chat-markdown strong {
+  color: #22d3ee;
+  font-weight: 600;
+}
+
+.chat-markdown a {
+  color: #67e8f9;
+  text-decoration: underline;
+}

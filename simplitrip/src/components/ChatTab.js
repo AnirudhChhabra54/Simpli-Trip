@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { startChat, chatMessage } from '../services/tripPlannerService';
 import { formatMessage, cleanText, renderFormattedMessage } from '../utils/messageFormatter';
 import { addTrip } from '../services/firestore';
@@ -109,11 +111,11 @@ const ChatTab = () => {
       setShowSaveModal(false);
       setTripName('');
       setError('');
-      
+
       // Show success message
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        text: `✅ Trip "${tripName}" saved successfully! You can view it in "My Trips".` 
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        text: `✅ Trip "${tripName}" saved successfully! You can view it in "My Trips".`
       }]);
     } catch (err) {
       setError('Failed to save trip: ' + err.message);
@@ -128,20 +130,24 @@ const ChatTab = () => {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-2xl p-4 rounded-lg ${
-                m.role === 'user'
-                  ? 'bg-cyan-600 text-white'
-                  : m.role === 'system'
+              className={`max-w-2xl p-4 rounded-lg ${m.role === 'user'
+                ? 'bg-cyan-600 text-white'
+                : m.role === 'system'
                   ? 'bg-gray-700 text-gray-100 font-semibold'
                   : 'bg-gray-700 text-gray-100'
-              }`}
+                }`}
             >
               {m.formatted ? (
                 <div className="space-y-2 text-sm">
                   {renderFormattedMessage(m.formatted)}
                 </div>
               ) : (
-                <p className="whitespace-pre-line">{cleanText(m.text)}</p>
+                <ReactMarkdown
+                  className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed"
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {cleanText(m.text)}
+                </ReactMarkdown>
               )}
             </div>
           </div>
@@ -176,15 +182,15 @@ const ChatTab = () => {
             className="flex-1 bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
             disabled={isLoading}
           />
-          <button 
-            onClick={sendMessage} 
-            disabled={isLoading || !input.trim()} 
+          <button
+            onClick={sendMessage}
+            disabled={isLoading || !input.trim()}
             className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white rounded-lg transition-all font-semibold"
           >
             Send
           </button>
-          <button 
-            onClick={() => setShowSaveModal(true)} 
+          <button
+            onClick={() => setShowSaveModal(true)}
             disabled={isLoading || messages.length <= 1}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg transition-all font-semibold"
           >
