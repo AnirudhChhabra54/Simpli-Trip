@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import html2pdf from 'html2pdf.js';
 import Layout from '../components/Layout';
 import { startChat, chatMessage } from '../services/tripPlannerService';
 import { formatMessage, cleanText, renderFormattedMessage } from '../utils/messageFormatter';
@@ -13,7 +16,7 @@ const TripPlannerPage = () => {
   const bottomRef = useRef(null);
   const [sessionId, setSessionId] = useState(null);
   const [step, setStep] = useState('form'); // 'form' or 'chat'
-  
+
   // Form preferences
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -33,7 +36,7 @@ const TripPlannerPage = () => {
   const [mealType, setMealType] = useState('mixed');
   const [accommodationType, setAccommodationType] = useState('hotel');
   const [transportMode, setTransportMode] = useState('flight');
-  
+
   // Chat state
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
@@ -84,7 +87,7 @@ Please provide a detailed itinerary with cost breakdown.`;
 
     setStep('chat');
     setError('');
-    
+
     // Initialize chat session
     const id = await startChat();
     setSessionId(id);
@@ -110,7 +113,7 @@ Please provide a detailed itinerary with cost breakdown.`;
 
   const sendChatMessage = async () => {
     if (!chatInput.trim()) return;
-    
+
     const userMsg = { role: 'user', text: chatInput };
     setMessages(prev => [...prev, userMsg]);
     setChatInput('');
@@ -160,13 +163,13 @@ Please provide a detailed itinerary with cost breakdown.`;
       console.log('Saving trip:', tripData);
       const docRef = await addTrip(tripData);
       console.log('Trip saved successfully with ID:', docRef.id);
-      
+
       // Give user feedback
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        text: `✅ Trip "${tripName}" saved successfully! Redirecting to My Trips...` 
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        text: `✅ Trip "${tripName}" saved successfully! Redirecting to My Trips...`
       }]);
-      
+
       // Small delay to show message, then navigate
       setTimeout(() => {
         navigate('/dashboard');
@@ -175,6 +178,19 @@ Please provide a detailed itinerary with cost breakdown.`;
       setError('Failed to save trip: ' + err.message);
       console.error('Error saving trip:', err);
     }
+  };
+
+  const handleExportPDF = () => {
+    const element = document.getElementById('itinerary-content-to-export');
+    if (!element) return;
+    const opt = {
+      margin: 0.5,
+      filename: `SimpliTrip_${destination || 'Itinerary'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, backgroundColor: '#111827', useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
   };
 
   return (
@@ -270,11 +286,10 @@ Please provide a detailed itinerary with cost breakdown.`;
                         <button
                           key={pref}
                           onClick={() => handlePreferenceChange(pref)}
-                          className={`p-3 rounded-lg border-2 transition-all text-center ${
-                            preferences[pref]
+                          className={`p-3 rounded-lg border-2 transition-all text-center ${preferences[pref]
                               ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
                               : 'border-gray-600 bg-gray-700/50 text-gray-400 hover:border-gray-500'
-                          }`}
+                            }`}
                         >
                           <div className="text-2xl mb-1">{categoryIcons[pref]}</div>
                           <div className="text-xs font-semibold capitalize">{pref}</div>
@@ -404,24 +419,27 @@ Please provide a detailed itinerary with cost breakdown.`;
 
             {/* Chat Messages */}
             <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-300px)]">
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div id="itinerary-content-to-export" className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-2xl p-4 rounded-lg ${
-                        m.role === 'user'
+                      className={`max-w-2xl p-4 rounded-lg ${m.role === 'user'
                           ? 'bg-cyan-600 text-white'
                           : m.role === 'system'
-                          ? 'bg-gray-700 text-gray-100 font-semibold'
-                          : 'bg-gray-700 text-gray-100'
-                      }`}
+                            ? 'bg-gray-700 text-gray-100 font-semibold'
+                            : 'bg-gray-700 text-gray-100'
+                        }`}
                     >
                       {m.formatted ? (
                         <div className="space-y-2 text-sm">
                           {renderFormattedMessage(m.formatted)}
                         </div>
                       ) : (
-                        <p>{cleanText(m.text)}</p>
+                        <div className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {cleanText(m.text)}
+                          </ReactMarkdown>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -457,6 +475,13 @@ Please provide a detailed itinerary with cost breakdown.`;
                     className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
                   >
                     Send
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    disabled={isLoading || messages.length <= 1}
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
+                  >
+                    Export PDF
                   </button>
                   <button
                     onClick={() => setShowSaveModal(true)}

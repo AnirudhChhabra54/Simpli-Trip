@@ -142,12 +142,11 @@ const ChatTab = () => {
                   {renderFormattedMessage(m.formatted)}
                 </div>
               ) : (
-                <ReactMarkdown
-                  className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed"
-                  remarkPlugins={[remarkGfm]}
-                >
-                  {cleanText(m.text)}
-                </ReactMarkdown>
+                <div className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {cleanText(m.text)}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
           </div>
