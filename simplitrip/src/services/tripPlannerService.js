@@ -1,7 +1,33 @@
+/**
+ * Trip Planner Service - Smart Conversational Flow
+ * Handles all API calls for the trip planning workflow
+ */
 
-// export default tripPlannerService;
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
+export const tripPlannerService = {
+  /**
+   * STAGE 1: Parse natural language query
+   * Endpoint: /api/v1/llm/parse-query
+   */
+  parseQuery: async (query) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/llm/parse-query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
 
+      if (!response.ok) {
+        throw new Error(`Parsing failed: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error parsing query:', error);
+      throw error;
+    }
+  },
   /**
    * STAGE 3: Generate complete itinerary
    * Endpoint: /api/v1/itinerary/generate-complete
@@ -13,11 +39,11 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tripDetails)
       });
-      
+
       if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Error generating itinerary:', error);
@@ -26,15 +52,7 @@
   },
 
   // --- Helpers ---
-        body: JSON.stringify({ question, destination })
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Error querying knowledge base:', error);
-      throw error;
-    }
-  },
+
 
   healthCheck: async () => {
     try {
