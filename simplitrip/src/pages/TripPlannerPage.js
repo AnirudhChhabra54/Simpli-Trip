@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import html2pdf from 'html2pdf.js';
 import Layout from '../components/Layout';
+import InteractiveItineraryMap from '../components/InteractiveItineraryMap';
 import { startChat, chatMessage } from '../services/tripPlannerService';
 import { formatMessage, cleanText, renderFormattedMessage } from '../utils/messageFormatter';
 import { addTrip } from '../services/firestore';
@@ -287,8 +288,8 @@ Please provide a detailed itinerary with cost breakdown.`;
                           key={pref}
                           onClick={() => handlePreferenceChange(pref)}
                           className={`p-3 rounded-lg border-2 transition-all text-center ${preferences[pref]
-                              ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                              : 'border-gray-600 bg-gray-700/50 text-gray-400 hover:border-gray-500'
+                            ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                            : 'border-gray-600 bg-gray-700/50 text-gray-400 hover:border-gray-500'
                             }`}
                         >
                           <div className="text-2xl mb-1">{categoryIcons[pref]}</div>
@@ -417,81 +418,94 @@ Please provide a detailed itinerary with cost breakdown.`;
               </div>
             )}
 
-            {/* Chat Messages */}
-            <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-300px)]">
-              <div id="itinerary-content-to-export" className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-2xl p-4 rounded-lg ${m.role === 'user'
+            {/* Split Screen Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-250px)]">
+
+              {/* Left Column: Chat Messages */}
+              <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
+                <div id="itinerary-content-to-export" className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {messages.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-2xl p-4 rounded-lg ${m.role === 'user'
                           ? 'bg-cyan-600 text-white'
                           : m.role === 'system'
                             ? 'bg-gray-700 text-gray-100 font-semibold'
                             : 'bg-gray-700 text-gray-100'
-                        }`}
-                    >
-                      {m.formatted ? (
-                        <div className="space-y-2 text-sm">
-                          {renderFormattedMessage(m.formatted)}
-                        </div>
-                      ) : (
-                        <div className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {cleanText(m.text)}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-700 text-gray-300 p-4 rounded-lg">
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                          }`}
+                      >
+                        {m.formatted ? (
+                          <div className="space-y-2 text-sm">
+                            {renderFormattedMessage(m.formatted)}
+                          </div>
+                        ) : (
+                          <div className="chat-markdown text-sm whitespace-pre-wrap leading-relaxed">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {cleanText(m.text)}
+                            </ReactMarkdown>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
-                <div ref={bottomRef} />
-              </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-700 text-gray-300 p-4 rounded-lg">
+                        <div className="flex space-x-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
+                </div>
 
-              {/* Chat Input */}
-              <div className="border-t border-gray-700 p-6 bg-gray-900/80">
-                <div className="flex gap-3">
-                  <input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) sendChatMessage(); }}
-                    placeholder="Ask for more details, changes, or recommendations..."
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={sendChatMessage}
-                    disabled={isLoading || !chatInput.trim()}
-                    className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
-                  >
-                    Send
-                  </button>
-                  <button
-                    onClick={handleExportPDF}
-                    disabled={isLoading || messages.length <= 1}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
-                  >
-                    Export PDF
-                  </button>
-                  <button
-                    onClick={() => setShowSaveModal(true)}
-                    disabled={isLoading}
-                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
-                  >
-                    Save Trip
-                  </button>
+                {/* Chat Input */}
+                <div className="border-t border-gray-700 p-6 bg-gray-900/80">
+                  <div className="flex gap-3">
+                    <input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) sendChatMessage(); }}
+                      placeholder="Ask for more details, changes, or recommendations..."
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                      disabled={isLoading}
+                    />
+                    <button
+                      onClick={sendChatMessage}
+                      disabled={isLoading || !chatInput.trim()}
+                      className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
+                    >
+                      Send
+                    </button>
+                    <button
+                      onClick={handleExportPDF}
+                      disabled={isLoading || messages.length <= 1}
+                      className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
+                    >
+                      Export PDF
+                    </button>
+                    <button
+                      onClick={() => setShowSaveModal(true)}
+                      disabled={isLoading}
+                      className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-lg transition-all"
+                    >
+                      Save Trip
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Right Column: Live Map */}
+              <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden relative z-0 p-1">
+                <InteractiveItineraryMap
+                  origin={destination.toLowerCase().includes(' to ') ? destination.split(/ to /i)[0].trim() : null}
+                  destination={destination.toLowerCase().includes(' to ') ? destination.split(/ to /i)[1].trim() : destination}
+                />
+              </div>
+
             </div>
 
             {/* Save Modal */}
