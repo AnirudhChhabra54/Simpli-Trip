@@ -26,21 +26,43 @@ const MapBoundsUpdater = ({ coordinates }) => {
 const InteractiveItineraryMap = ({ destination, origin }) => {
     const [route, setRoute] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [distanceKm, setDistanceKm] = useState(null);
+    const [osrmPolyline, setOsrmPolyline] = useState(null);
 
     useEffect(() => {
         const fetchRoute = async () => {
             setLoading(true);
             try {
                 const points = [];
+                let originCoords = null;
+                let destCoords = null;
+
                 if (origin) {
-                    const originCoords = await resolveCoordinates(origin);
+                    originCoords = await resolveCoordinates(origin);
                     if (originCoords) points.push({ name: origin, lat: originCoords.lat, lon: originCoords.lon });
                 }
                 if (destination) {
-                    const destCoords = await resolveCoordinates(destination);
+                    destCoords = await resolveCoordinates(destination);
                     if (destCoords) points.push({ name: destination, lat: destCoords.lat, lon: destCoords.lon });
                 }
                 setRoute(points);
+
+                if (originCoords && destCoords) {
+                    try {
+                        const osrmRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${originCoords.lon},${originCoords.lat};${destCoords.lon},${destCoords.lat}?overview=full&geometries=geojson`);
+                        if (osrmRes.ok) {
+                            const osrmData = await osrmRes.json();
+                            if (osrmData.routes && osrmData.routes.length > 0) {
+                                const bestRoute = osrmData.routes[0];
+                                setDistanceKm((bestRoute.distance / 1000).toFixed(1));
+                                const osrmPath = bestRoute.geometry.coordinates.map(c => [c[1], c[0]]);
+                                setOsrmPolyline(osrmPath);
+                            }
+                        }
+                    } catch (routeErr) {
+                        console.error("OSRM Routing failed", routeErr);
+                    }
+                }
             } catch (err) {
                 console.error("Geocoding failed", err);
             }
@@ -76,16 +98,22 @@ const InteractiveItineraryMap = ({ destination, origin }) => {
                         <Popup className="font-bold text-gray-800">{point.name}</Popup>
                     </Marker>
                 ))}
-                {route.length > 1 && (
-                    <Polyline
-                        positions={route.map(p => [p.lat, p.lon])}
-                        color="#06b6d4"
-                        weight={5}
-                        dashArray="10, 10"
-                    />
+                {osrmPolyline ? (
+                    <Polyline positions={osrmPolyline} color="#06b6d4" weight={5} />
+                ) : (
+                    route.length > 1 && (
+                        <Polyline positions={route.map(p => [p.lat, p.lon])} color="#06b6d4" weight={5} dashArray="10, 10" />
+                    )
                 )}
-                <MapBoundsUpdater coordinates={route.map(p => [p.lat, p.lon])} />
+                <MapBoundsUpdater coordinates={osrmPolyline || route.map(p => [p.lat, p.lon])} />
             </MapContainer>
+
+            {distanceKm && (
+                <div className="absolute top-4 right-4 z-[400] bg-gray-900/80 backdrop-blur-md border border-cyan-500/50 px-4 py-2 rounded-xl shadow-lg shadow-cyan-500/20">
+                    <span className="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-1">Driving Distance</span>
+                    <span className="text-cyan-400 font-bold text-xl">{distanceKm} <span className="text-sm">km</span></span>
+                </div>
+            )}
         </div>
     );
 };

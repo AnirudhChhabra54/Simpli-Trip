@@ -19,6 +19,7 @@ const TripPlannerPage = () => {
   const [step, setStep] = useState('form'); // 'form' or 'chat'
 
   // Form preferences
+  const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -75,6 +76,7 @@ const TripPlannerPage = () => {
     const selectedPrefs = Object.keys(preferences).filter(k => preferences[k]).join(', ');
 
     const promptMessage = `Plan a trip with these details:
+- Origin/Current Location: ${currentLocation || 'Not specified'}
 - Destination: ${destination}
 - Budget: ₹${budget}
 - Duration: ${days > 0 ? days + ' days' : 'Not specified'}
@@ -224,15 +226,27 @@ Please provide a detailed itinerary with cost breakdown.`;
 
                   {/* Destination and Dates */}
                   <div className="space-y-6 mb-8">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-2">Where do you want to go?</label>
-                      <input
-                        type="text"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        placeholder="e.g., Paris, Tokyo, Goa..."
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">Starting Point / Current Location</label>
+                        <input
+                          type="text"
+                          value={currentLocation}
+                          onChange={(e) => setCurrentLocation(e.target.value)}
+                          placeholder="e.g., Delhi, Mumbai..."
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">Where do you want to go?</label>
+                        <input
+                          type="text"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          placeholder="e.g., Paris, Tokyo, Goa..."
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
