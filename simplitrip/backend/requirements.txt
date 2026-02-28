@@ -60,3 +60,4 @@ sentence-transformers==2.3.1
 beautifulsoup4==4.12.3
 lxml==5.1.0
 requests==2.31.0
+amadeus==1.6

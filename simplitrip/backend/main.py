@@ -246,3 +246,16 @@ if __name__ == "__main__":
         reload=settings.API_RELOAD,
         log_level=settings.LOG_LEVEL.lower()
     )
+
+
+def main():
+    """Console entry point used by setup.py (`simplitrip-backend=main:main`)."""
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.API_HOST,
+        port=settings.API_PORT,
+        reload=settings.API_RELOAD,
+        log_level=settings.LOG_LEVEL.lower()
+    )

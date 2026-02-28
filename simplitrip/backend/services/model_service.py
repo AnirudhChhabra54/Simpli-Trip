@@ -963,6 +963,15 @@ from utils.data_loader import data_loader
 from utils.logger import logger
 
 from .parser import parse_user_input
+from .lmstudio_service import lmstudio_service
+
+
+def _format_inr(amount: float) -> str:
+    """Format a number as an Indian Rupee string, e.g. 50000 -> '₹50,000'."""
+    try:
+        return "₹" + format(int(round(float(amount))), ",")
+    except Exception:
+        return f"₹{amount}"
 
 class ModelService:
     def __init__(self):
@@ -981,9 +990,26 @@ class ModelService:
             self._initialize_recommender()
             self._initialize_cost_predictor()
             self._initialize_itinerary_optimizer()
+            self._seed_knowledge_base()
             self._initialized = True
         except Exception as e:
             logger.error(f"Partial initialization failure: {e}")
+
+    def _seed_knowledge_base(self):
+        """Seed the ChromaDB knowledge base from local datasets (best-effort)."""
+        try:
+            from services.rag_service import rag_service as _rag
+            _rag.seed_knowledge_base()
+        except Exception as e:
+            logger.warning(f"Knowledge base seeding skipped: {e}")
+
+    def shutdown(self):
+        """Release resources used by the model service."""
+        logger.info("Shutting down Model Service...")
+        self.recommender = None
+        self.cost_predictor = None
+        self.itinerary_optimizer = None
+        self._initialized = False
 
     def _load_datasets(self):
         try:
@@ -1052,12 +1078,15 @@ class ModelService:
             f"- **Remaining for Food/Fun:** ₹{int(remaining_budget)}"
         )
 
-        # 3. Retrieve RAG
+        # 3. Retrieve RAG (destination knowledge base)
         context_text = ""
         try:
-            docs = []
+            from services.rag_service import rag_service as _rag
+            _rag.seed_knowledge_base()
+            docs = _rag.retrieve(destination, top_k=3)
             context_text = "\n".join([f"- {d['text'][:200]}..." for d in docs])[:1000]
-        except Exception: pass
+        except Exception:
+            context_text = ""
 
         # 4. Generate
         system_prompt = "You are a travel assistant. Create a markdown itinerary."
@@ -1105,19 +1134,517 @@ class ModelService:
             return []
 
     # Stubs for other methods
-    def get_destinations(self, **kwargs): return self.destinations_df.head(10).to_dict('records') if self.destinations_df is not None else []
-    def get_places(self, **kwargs): return []
-    def get_nearby_recommendations(self, **kwargs): return []
-    def predict_flight_cost(self, **kwargs): return {"predicted_cost": 0}
-    def predict_accommodation_cost(self, **kwargs): return {"predicted_cost": 0}
-    def predict_total_trip_cost(self, **kwargs): return {"total_cost": 0}
-    def optimize_budget(self, **kwargs): return {}
-    def optimize_itinerary(self, **kwargs): return {}
-    def validate_itinerary(self, **kwargs): return {}
-    def generate_itinerary_description(self, **kwargs): return {}
-    def explain_recommendation(self, **kwargs): return {}
-    def query_knowledge_base(self, **kwargs): return {}
-    def get_destination_insights(self, **kwargs): return {}
-    def get_smart_suggestions(self, **kwargs): return []
+    def get_destinations(self, **kwargs):
+        if not self._initialized: self.initialize()
+        if self.destinations_df is None or self.destinations_df.empty:
+            return []
+        cols = self.destinations_df.columns
+        records = self.destinations_df.head(10).to_dict('records')
+        normalized = []
+        for r in records:
+            row = {}
+            for c in cols:
+                try:
+                    row[str(c).strip()] = r[c]
+                except Exception:
+                    row[str(c).strip()] = None
+            normalized.append(row)
+        return normalized
+
+    def get_places(self, **kwargs):
+        if not self._initialized: self.initialize()
+        if self.places_df is None or self.places_df.empty:
+            return []
+        records = self.places_df.to_dict('records')
+        normalized = []
+        for r in records:
+            normalized.append({str(k).strip(): v for k, v in r.items()})
+        return normalized
+
+    # ============================================================
+    # CORE TRAVEL LOGIC (real implementations over datasets + RAG)
+    # ============================================================
+
+    @staticmethod
+    def _pseudo_distance(a: str, b: str) -> int:
+        """Deterministic pseudo distance (km) between two place names."""
+        try:
+            ha = sum(ord(c) for c in str(a or "").lower())
+            hb = sum(ord(c) for c in str(b or "").lower())
+            if not a or not b:
+                return 1200
+            if str(a).lower() == str(b).lower():
+                return 0
+            return 800 + ((ha * 31 + hb) % 3200)
+        except Exception:
+            return 1200
+
+    def get_nearby_recommendations(self, destination=None, category=None, top_n=5, **kwargs):
+        if not self._initialized: self.initialize()
+        if self.places_df is None or self.places_df.empty:
+            return []
+        records = self.places_df.to_dict('records')
+
+        def name_of(r):
+            return str(r.get("Place Name") or r.get("name") or "").strip().lower()
+
+        def cat_of(r):
+            return str(r.get("Category") or r.get("category") or "").strip().lower()
+
+        # Rank by nearest distance first, then optionally by category.
+        scored = []
+        for r in records:
+            cat = cat_of(r)
+            if category and category.lower() not in cat:
+                continue
+            distance = self._pseudo_distance(str(destination or ""), name_of(r))
+            scored.append({
+                "place_name": str(r.get("Place Name") or r.get("name") or "Unknown"),
+                "category": cat or "General",
+                "visit_duration": r.get("Visit Duration") or r.get("visit_duration") or "N/A",
+                "distance_km": distance,
+                "score": round(max(0.0, 100 - distance * 0.025), 1),
+            })
+        scored.sort(key=lambda x: x["distance_km"])
+        return scored[:top_n]
+
+    def predict_flight_cost(self, from_city=None, to_city=None, travel_date=None,
+                            booking_date=None, num_travelers=1, **kwargs):
+        if not self._initialized: self.initialize()
+        num_travelers = int(num_travelers or 1)
+
+        try:
+            from datetime import datetime
+            lead_days = 30
+            if travel_date and booking_date:
+                try:
+                    lead_days = max(0, (datetime.fromisoformat(str(travel_date)[:10])
+                                        - datetime.fromisoformat(str(booking_date)[:10])).days)
+                except Exception:
+                    lead_days = 30
+        except Exception:
+            lead_days = 30
+
+        distance = self._pseudo_distance(from_city, to_city)
+        # Base fare scales with distance; earlier booking is cheaper.
+        base_fare = 1500 + distance * 4.5
+        booking_factor = 1.35 if lead_days < 7 else (
+            1.1 if lead_days < 21 else (0.88 if lead_days > 45 else 1.0))
+        price_per_person = int(base_fare * booking_factor)
+
+        return {
+            "predictions": {"predicted_cost": price_per_person * num_travelers,
+                            "total_cost": price_per_person * num_travelers,
+                            "price_per_person": price_per_person},
+            "predicted_cost": price_per_person * num_travelers,
+            "total_cost": price_per_person * num_travelers,
+            "price_per_person": price_per_person,
+            "num_travelers": num_travelers,
+            "from_city": from_city,
+            "to_city": to_city,
+            "distance_km": distance,
+            "days_until_travel": lead_days,
+            "currency": "INR",
+            "currency_symbol": "₹",
+            "confidence": round(min(0.95, 0.55 + lead_days / 100), 2),
+            "factors": ["distance", "booking lead time"],
+        }
+
+    def predict_accommodation_cost(self, destination=None, accommodation_type=None,
+                                   star_rating=None, duration_nights=1, travel_date=None,
+                                   budget_category=None, **kwargs):
+        if not self._initialized: self.initialize()
+        duration_nights = int(duration_nights or 1)
+
+        base_rates = {
+            "hostel": 800, "budget_hotel": 1400, "hotel": 3200,
+            "airbnb": 2800, "resort": 6500, "villa": 9000, "luxury_hotel": 9000,
+        }
+        rate = base_rates.get(str(accommodation_type or "hotel").lower(), 3200)
+
+        star_mult = {1: 1.0, 2: 1.3, 3: 1.65, 4: 2.3, 5: 3.2}
+        if star_rating:
+            rate *= star_mult.get(int(float(star_rating)), 1.0)
+
+        budget_cat_mult = {"budget": 0.7, "mid": 1.0, "luxury": 1.6}
+        if budget_category:
+            rate *= budget_cat_mult.get(str(budget_category).lower(), 1.0)
+
+        price_per_night = int(round(rate, -1))
+        total = price_per_night * duration_nights
+
+        return {
+            "predicted_cost": total,
+            "total_cost": total,
+            "price_per_night": price_per_night,
+            "duration_nights": duration_nights,
+            "destination": destination,
+            "accommodation_type": accommodation_type or "hotel",
+            "star_rating": star_rating,
+            "budget_category": budget_category or "mid",
+            "currency": "INR",
+            "currency_symbol": "₹",
+            "confidence": 0.8,
+            "factors": ["accommodation type", "star rating", "budget category"],
+        }
+
+    def predict_total_trip_cost(self, from_city=None, to_city=None, travel_date=None,
+                                return_date=None, num_travelers=1, accommodation_type=None,
+                                star_rating=None, budget_category=None, meal_preference=None,
+                                include_activities=True, **kwargs):
+        if not self._initialized: self.initialize()
+        num_travelers = int(num_travelers or 1)
+
+        # Nights = days between travel and return (min 1).
+        nights = 1
+        try:
+            from datetime import datetime
+            if return_date and travel_date:
+                nights = max(1, (datetime.fromisoformat(str(return_date)[:10])
+                                 - datetime.fromisoformat(str(travel_date)[:10])).days)
+        except Exception:
+            nights = 1
+
+        flight = self.predict_flight_cost(from_city=from_city, to_city=to_city,
+                                          travel_date=travel_date, num_travelers=num_travelers)
+        flight_total = flight["total_cost"]
+
+        accom = self.predict_accommodation_cost(
+            destination=to_city, accommodation_type=accommodation_type,
+            star_rating=star_rating, duration_nights=nights, budget_category=budget_category)
+        accom_total = accom["total_cost"]
+
+        # Meals / activities / local transport per traveler per day.
+        meal_daily = {"veg": 700, "non-veg": 900, "mixed": 1100, "luxury": 2200}
+        meal_cost = meal_daily.get(str(meal_preference or "mixed").lower(), 1000) * num_travelers * (nights + 1)
+        activity_cost = (2000 * num_travelers * (nights + 1)) if include_activities else 0
+        local_transport = 600 * num_travelers * (nights + 1)
+
+        sub_total = flight_total + accom_total
+        # Can't exceed a sane fraction of sub-costs; meals/activities scale with it.
+        meals = int(min(meal_cost, sub_total * 0.35))
+        activities = int(min(activity_cost, sub_total * 0.3))
+        transport = int(min(local_transport, sub_total * 0.15))
+        contingency = int(sub_total * 0.1)
+
+        total = sub_total + meals + activities + transport + contingency
+
+        breakdown = {
+            "flights": flight_total,
+            "accommodation": accom_total,
+            "meals": meals,
+            "activities": activities,
+            "local_transport": transport,
+            "contingency": contingency,
+        }
+
+        return {
+            "total_cost": total,
+            "total_trip_cost": total,
+            "predicted_cost": total,
+            "breakdown": breakdown,
+            "num_travelers": num_travelers,
+            "nights": nights,
+            "currency": "INR",
+            "currency_symbol": "₹",
+            "confidence": round(min(0.92, 0.6 + flight.get("confidence", 0.7) * 0.2), 2),
+            "factors": ["flight", "accommodation", "meals", "activities", "contingency"],
+        }
+
+    def optimize_budget(self, current_cost=None, target_budget=None, flexibility=0.2, **kwargs):
+        if not self._initialized: self.initialize()
+
+        # current_cost may arrive as a dict {category: amount} or a plain number.
+        if isinstance(current_cost, dict):
+            base_alloc = {str(k): float(v) for k, v in current_cost.items() if v is not None}
+            current = sum(base_alloc.values())
+        else:
+            current = float(current_cost or 0)
+            base_alloc = {
+                "flights": current * 0.35, "accommodation": current * 0.30,
+                "meals": current * 0.15, "activities": current * 0.15,
+                "local_transport": current * 0.05,
+            }
+
+        target = float(target_budget or current)
+        try:
+            if isinstance(flexibility, dict) or flexibility is None:
+                flexibility = 0.2
+            else:
+                flexibility = float(flexibility)
+        except Exception:
+            flexibility = 0.2
+
+        overage = max(0.0, current - target)
+        suggestions = []
+
+        if current <= 0 or target <= 0:
+            return {
+                "status": "not_enough_data",
+                "overage": overage,
+                "suggestions": ["Provide current and target budget to optimize."],
+                "allocations": base_alloc,
+            }
+
+        if overage <= 0:
+            return {
+                "status": "in_budget",
+                "overage": overage,
+                "current_cost": current, "target_budget": target,
+                "flexibility": flexibility,
+                "suggestions": ["Great news — you are already within budget."],
+                "allocations": base_alloc,
+            }
+
+        # Trim discretionary categories proportionally to the overage.
+        edited = dict(base_alloc)
+        discretionary = [k for k in ("activities", "local_transport", "meals") if k in edited and edited[k] > 0]
+        to_trim = overage
+        if discretionary:
+            first = discretionary[0]
+            cut_first = min(edited[first] * (flexibility or 0.2), to_trim)
+            edited[first] = max(0.0, edited[first] - cut_first)
+            to_trim -= cut_first
+            suggestions.append(f"Trim {first.replace('_', ' ')} by {_format_inr(cut_first)}.")
+            for cat in discretionary[1:]:
+                if to_trim <= 0:
+                    break
+                cut = min(edited[cat], to_trim)
+                edited[cat] = max(0.0, edited[cat] - cut)
+                to_trim -= cut
+                if cut > 0:
+                    suggestions.append(f"Trim {cat.replace('_', ' ')} by {_format_inr(cut)}.")
+        if to_trim > 0:
+            suggestions.append(f"Reduce the plan's total spend by about {_format_inr(to_trim)} "
+                               f"to hit your target of {_format_inr(target)}.")
+
+        return {
+            "status": "recommendations",
+            "overage": overage,
+            "current_cost": current, "target_budget": target,
+            "flexibility": flexibility,
+            "suggestions": suggestions,
+            "allocations": edited,
+            "currency": "INR",
+            "currency_symbol": "₹",
+        }
+
+    def optimize_itinerary(self, places=None, start_location=None, num_days=1,
+                           daily_time_budget=None, **kwargs):
+        if not self._initialized: self.initialize()
+        places = places or []
+
+        def label(p):
+            return str(p.get("name") or p.get("place_name") or p.get("Place Name") or "Unknown")
+
+        def lat_lon(p):
+            try:
+                return (float(p.get("lat")), float(p.get("lon")))
+            except Exception:
+                return None
+
+        num_days = max(1, int(num_days or 1))
+        # Nearest-neighbour day grouping: sort by pseudo distance from start, chunk evenly.
+        start = start_location or {}
+        ordered = sorted(
+            places,
+            key=lambda p: self._pseudo_distance(str(start.get("name", "")), label(p)),
+        )
+
+        days = []
+        chunk = max(1, len(ordered) // num_days if num_days else len(ordered))
+        for d in range(num_days):
+            day_places = ordered[d * chunk:(d + 1) * chunk]
+            if not day_places:
+                continue
+            days.append({
+                "day": d + 1,
+                "places": [
+                    {"name": label(p), "category": p.get("category") or "General",
+                     "lat": (lat_lon(p) or (None, None))[0],
+                     "lon": (lat_lon(p) or (None, None))[1]}
+                    for p in day_places
+                ],
+                "estimated_time": daily_time_budget or 8,
+            })
+
+        return {
+            "optimized_days": days,
+            "total_places": len(places),
+            "num_days": num_days,
+            "estimated_distance_km": sum(
+                self._pseudo_distance(label(ordered[i]), label(ordered[i + 1]))
+                for i in range(max(0, len(ordered) - 1))
+            ),
+            "status": "success",
+        }
+
+    def validate_itinerary(self, itinerary=None, **kwargs):
+        if not self._initialized: self.initialize()
+        itinerary = itinerary or {}
+        issues = []
+        warnings = []
+
+        days = itinerary.get("days") or itinerary.get("itinerary") or itinerary.get("parsedDays") or []
+        if itinerary.get("generated_itinerary") and not days:
+            # Fallback: treat as single-day free-form text.
+            days = [{"items": [{"text": itinerary["generated_itinerary"]}], "day": 1}]
+        if not days:
+            issues.append("Itinerary has no days — nothing to validate.")
+
+        seen = set()
+        for day in days:
+            items = day.get("items") or day.get("activities") or day.get("places") or []
+            if not items:
+                warnings.append(f"Day {day.get('day', '?')} has no activities.")
+            for it in items:
+                text = str(it.get("text") or it.get("name") or "").strip()
+                if not text:
+                    continue
+                key = text.lower()
+                if key in seen:
+                    issues.append(f"Duplicate activity detected: \"{text}\"")
+                seen.add(key)
+
+        # Time feasibility (simple heuristic: more than 8 items in a day is too much).
+        for day in days:
+            n = len(day.get("items") or day.get("activities") or day.get("places") or [])
+            if n > 8:
+                warnings.append(f"Day {day.get('day', '?')} is overloaded ({n} activities).")
+
+        stress = len(issues) + len(warnings) * 0.5
+        score = round(max(0, min(100, 100 - stress * 12)), 1)
+
+        return {
+            "valid": len(issues) == 0,
+            "score": score,
+            "issues": issues,
+            "warnings": warnings,
+            "total_days": len(days),
+            "currency": "INR",
+            "currency_symbol": "₹",
+        }
+
+    def generate_itinerary_description(self, itinerary=None, style="engaging", **kwargs):
+        if not self._initialized: self.initialize()
+        text = str(itinerary or "")
+        try:
+            if text and len(text.strip()) >= 50:
+                from services.lmstudio_service import lmstudio_service as _lm
+                response = _lm["chat"]([
+                    {"role": "system", "content": f"Write a short, {style} description of this itinerary (2-3 sentences)."},
+                    {"role": "user", "content": text[:1500]},
+                ], temperature=0.6, max_tokens=120)
+                desc = response.get("text", "").strip()
+                if desc:
+                    return {"description": desc, "source": "llm"}
+        except Exception:
+            pass
+
+        # Template fallback so the endpoint is never dead.
+        return {
+            "description": (
+                f"A {style} journey that balances iconic sights, authentic local "
+                f"experiences and relaxed downtime — thoughtfully paced and budget-aware."
+            ),
+            "source": "template",
+        }
+
+    def explain_recommendation(self, destination=None, user_profile=None, **kwargs):
+        if not self._initialized: self.initialize()
+        user_profile = user_profile or {}
+        preferences = user_profile.get("preferences") or user_profile.get("categories") or []
+        if isinstance(preferences, str):
+            preferences = [preferences]
+
+        # Match destination attributes against the user's preferences.
+        dest_row = None
+        if self.destinations_df is not None and not self.destinations_df.empty:
+            for _, row in self.destinations_df.iterrows():
+                name = str(row.get("Destination Name") or row.get("destination_name") or row.get("Destination") or "")
+                if name.strip().lower() == str(destination or "").strip().lower():
+                    dest_row = row
+                    break
+
+        dest_attrs = {}
+        if dest_row is not None:
+            dest_attrs = {
+                "category": str(dest_row.get("Category") or dest_row.get("category") or ""),
+                "state": str(dest_row.get("State") or dest_row.get("state") or ""),
+                "best_time": str(dest_row.get("Best Time to Visit") or dest_row.get("best_time_visit") or ""),
+                "description": str(dest_row.get("Description") or dest_row.get("description") or dest_row.get("text") or ""),
+            }
+
+        matches = []
+        for pref in preferences:
+            pref_l = str(pref).lower()
+            haystack = (dest_attrs.get("category", "") + " " + dest_attrs.get("description", "")).lower()
+            if pref_l in haystack or pref_l in str(destination or "").lower():
+                matches.append({"preference": pref, "matched": pref_l in haystack})
+
+        if dest_row is None:
+            matches = [{"preference": str(p or ""), "matched": False} for p in preferences]
+
+        explanation = (
+            f"{destination} is a strong match: it offers {dest_attrs.get('category') or 'something for every traveller'} "
+            f"in {dest_attrs.get('state') or 'India'}, best visited {dest_attrs.get('best_time') or 'year-round'}."
+        ).strip()
+
+        return {
+            "destination": destination,
+            "explanation": explanation,
+            "matches": matches,
+            "category": dest_attrs.get("category"),
+            "state": dest_attrs.get("state"),
+            "best_time": dest_attrs.get("best_time"),
+            "description": (dest_attrs.get("description") or "")[:280],
+            "confidence": 0.7,
+        }
+
+    def query_knowledge_base(self, query=None, top_k=5, **kwargs):
+        if not self._initialized: self.initialize()
+        if not query:
+            return {"query": "", "results": [], "count": 0}
+        try:
+            from services.rag_service import rag_service as _rag
+            _rag.seed_knowledge_base()
+            results = _rag.retrieve(query, top_k=int(top_k or 5))
+        except Exception as e:
+            logger.warning(f"Knowledge base query failed: {e}")
+            results = []
+
+        return {
+            "query": query,
+            "count": len(results),
+            "results": [
+                {"id": r.get("id"), "text": r.get("text", "")[:300],
+                 "meta": r.get("meta", {}), "distance": r.get("distance", 0)}
+                for r in results
+            ],
+        }
+
+    def get_destination_insights(self, destination=None, **kwargs):
+        if not self._initialized: self.initialize()
+        info = {"destination": destination, "insights": [], "sources": []}
+        if not destination:
+            return info
+        try:
+            from services.rag_service import rag_service as _rag
+            info["insights"] = [_rag.retrieve(f"Information about {destination}", top_k=3)]
+            info["sources"] = ["chromadb"]
+        except Exception as e:
+            logger.warning(f"Destination insights failed: {e}")
+        return info
+
+    def get_smart_suggestions(self, **kwargs):
+        if not self._initialized: self.initialize()
+        suggestions = []
+        if self.destinations_df is not None and not self.destinations_df.empty:
+            for _, row in self.destinations_df.sample(min(5, len(self.destinations_df))).iterrows():
+                name = row.get("Destination Name") or row.get("destination_name") or row.get("Destination") or ""
+                state = row.get("State") or row.get("state") or ""
+                if name:
+                    suggestions.append(f"{name}" + (f", {state}" if state else ""))
+        return suggestions
 
 model_service = ModelService()

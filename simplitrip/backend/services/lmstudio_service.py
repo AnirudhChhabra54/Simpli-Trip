@@ -17,6 +17,38 @@ LM_TIMEOUT = int(os.getenv("LMSTUDIO_TIMEOUT", "45"))
 LM_RETRIES = int(os.getenv("LMSTUDIO_RETRIES", "1"))
 LM_BACKOFF = float(os.getenv("LMSTUDIO_BACKOFF", "1.5"))
 LM_API_KEY = os.getenv("LMSTUDIO_API_KEY", "lm-studio") # LM Studio default
+LM_STATE_FILE = os.getenv("LMSTUDIO_STATE_FILE", os.path.join(os.path.dirname(__file__), "..", "data", "lmstudio_state.json"))
+
+# Mutable, selectable model state. Persisted so the chosen model survives restarts.
+_CURRENT_MODEL = LM_MODEL
+
+
+def _load_state():
+    global _CURRENT_MODEL
+    try:
+        if os.path.exists(LM_STATE_FILE):
+            with open(LM_STATE_FILE) as f:
+                import json
+                data = json.load(f)
+                if data.get("model"):
+                    _CURRENT_MODEL = data["model"]
+    except Exception:
+        pass
+
+
+def _save_state():
+    global _CURRENT_MODEL
+    try:
+        os.makedirs(os.path.dirname(LM_STATE_FILE), exist_ok=True)
+        with open(LM_STATE_FILE, "w") as f:
+            import json
+            json.dump({"model": _CURRENT_MODEL}, f)
+    except Exception:
+        pass
+
+
+_load_state()
+
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -62,7 +94,7 @@ def chat(
         e.g., {'text': '...', 'raw': {...}}
     """
     payload = {
-        "model": LM_MODEL,
+        "model": _CURRENT_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -118,20 +150,74 @@ def is_available() -> bool:
         return False
 
 
+def list_models() -> Dict[str, Any]:
+    """
+    Fetch every model LM Studio currently has loaded via /v1/models.
+    """
+    available = False
+    models = []
+    try:
+        url = f"{LM_HOST.rstrip('/')}/v1/models"
+        resp = requests.get(url, headers=HEADERS, timeout=8)
+        models = {"available": False, "models": [], "current": get_current_model()}
+        if resp.status_code == 200:
+            data = resp.json()
+            available = True
+            models = data.get("data", [])
+            # Normalise to a list of ids (LM Studio returns 'id', 'object', 'owned_by').
+            models = [m.get("id") for m in models if m.get("id")]
+            # The loaded model (if any) is normally the first one.
+            if models and get_current_model() not in models:
+                for m in models:
+                    if "loaded" in m.lower() or m.startswith("local-"):
+                        set_current_model(m)
+                        break
+        return {"available": available, "models": models, "current": get_current_model()}
+    except requests.exceptions.RequestException as e:
+        print(f"LM Studio model listing failed: {e}")
+        return {"available": False, "models": models, "current": get_current_model()}
+
+
+def get_current_model() -> str:
+    """Return the currently selected model id."""
+    return _CURRENT_MODEL
+
+
+def set_current_model(model: str) -> str:
+    """Switch the active model used by chat/generate calls."""
+    global _CURRENT_MODEL
+    if model and isinstance(model, str):
+        _CURRENT_MODEL = model
+        _save_state()
+    return _CURRENT_MODEL
+
+
 def health() -> Dict[str, Any]:
     """Return a health check dictionary."""
     avail = is_available()
     return {
         "provider": "lmstudio",
         "host": LM_HOST,
-        "model": LM_MODEL,
+        "model": _CURRENT_MODEL,
         "available": avail,
     }
 
-# Make the chat function easily importable
-lmstudio_service = {
+class LMStudioServiceWrapper(dict):
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'LMStudioService' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+lmstudio_service = LMStudioServiceWrapper({
     "chat": chat,
     "generate": generate,
     "is_available": is_available,
     "health": health,
-}
+    "list_models": list_models,
+    "get_current_model": get_current_model,
+    "set_current_model": set_current_model,
+})
