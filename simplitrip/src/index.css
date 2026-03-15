@@ -1,184 +1,233 @@
-/* Enhanced Gradient System */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   SIMPLITRIP CINEMATIC DESIGN SYSTEM TOKENS & UTILITIES
+   ========================================================================== */
+
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  --dark-bg: #0f172a;
-  --darker-bg: #0a0f1c;
-  --card-bg: #1e293b;
+  --cinema-bg-base: #040714;
+  --cinema-bg-surface: #080f24;
+  --cinema-accent-cyan: #06b6d4;
+  --cinema-accent-indigo: #6366f1;
+  --cinema-accent-violet: #8b5cf6;
+  --cinema-accent-fuchsia: #d946ef;
+  --cinema-accent-amber: #f59e0b;
 }
 
-/* Beautiful Base Gradient Background */
+/* Base Body Styling */
 body {
-  background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
+  background-color: #040714;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.06) 0px, transparent 50%);
   background-attachment: fixed;
-  color: #e2e8f0;
+  color: #f1f5f9;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
   margin: 0;
 }
 
-/* Cursor Spotlight Tracker */
-.glass-ambient-light {
-  background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0),
-      rgba(103, 232, 249, 0.1),
-      transparent 40%);
-  mix-blend-mode: screen;
-  transition: opacity 0.3s;
+h1, h2, h3, h4, .font-display {
+  font-family: 'Outfit', sans-serif;
 }
 
-/* Convert solid Tailwind classes to Glass universally */
-.bg-gray-800,
-.bg-slate-800 {
-  background: rgba(30, 41, 59, 0.45) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* --------------------------------------------------------------------------
+   Cinematic Glassmorphism 2.0
+   -------------------------------------------------------------------------- */
+.glass-cinema {
+  background: rgba(8, 15, 36, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
-.bg-gray-900,
-.bg-slate-900,
-.bg-gray-900\/60,
-.bg-gray-900\/80 {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+.glass-cinema-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(8, 15, 36, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Base Glass Class */
-.glass-card,
-.glass-panel {
-  background: rgba(30, 41, 59, 0.3) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
-  border-radius: 20px;
+.glass-cinema-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(6, 182, 212, 0.25), 0 0 25px -5px rgba(139, 92, 246, 0.2);
 }
 
-/* Enhanced Button Styles */
-.btn-neon {
-  background: var(--primary-gradient);
-  border: none;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
+.glass-pill {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-input {
+  background: rgba(6, 11, 26, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
   transition: all 0.3s ease;
 }
 
-.btn-neon::before {
+.glass-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Aurora & Glow Lighting
+   -------------------------------------------------------------------------- */
+.aurora-mesh {
+  position: absolute;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 35px -5px rgba(6, 182, 212, 0.5);
+}
+
+.glow-purple {
+  box-shadow: 0 0 35px -5px rgba(168, 85, 247, 0.5);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+}
+
+.glow-text-gold {
+  text-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Cinematic Shimmer & Neon Buttons
+   -------------------------------------------------------------------------- */
+.btn-cinema-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px -5px rgba(6, 182, 212, 0.4);
+}
+
+.btn-cinema-primary::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
 }
 
-.btn-neon:hover::before {
-  left: 100%;
+.btn-cinema-primary:hover::after {
+  transform: translateX(100%);
 }
 
-.btn-neon:hover {
+.btn-cinema-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 35px -5px rgba(6, 182, 212, 0.6), 0 0 30px rgba(139, 92, 246, 0.4);
+}
+
+.btn-cinema-outline {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-cinema-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Perspective & 3D Cards
+   -------------------------------------------------------------------------- */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.card-3d-tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease-out;
 }
 
 /* Floating Animation */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
   }
-
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-12px) rotate(1deg);
   }
 }
 
-.float-element {
-  animation: float 3s ease-in-out infinite;
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
 }
 
-/* Typewriter Effect */
-.typewriter {
-  overflow: hidden;
-  border-right: 2px solid #667eea;
-  white-space: nowrap;
-  animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
-}
-
-@keyframes typing {
-  from {
-    width: 0
+/* Pulse Glow Animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
   }
-
-  to {
-    width: 100%
-  }
-}
-
-@keyframes blink-caret {
-
-  from,
-  to {
-    border-color: transparent
-  }
-
   50% {
-    border-color: #667eea
+    opacity: 0.8;
+    transform: scale(1.05);
   }
 }
 
-/* --- NEW: Interactive Zoom and Glow Responses --- */
-button,
-.cursor-pointer {
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
 }
 
-button:hover,
-.cursor-pointer:hover {
-  transform: scale(1.04) translateY(-2px) !important;
-  box-shadow: 0 15px 35px rgba(103, 232, 249, 0.2) !important;
-  border-color: rgba(103, 232, 249, 0.5) !important;
-  z-index: 50;
-}
-
-/* --- NEW: Custom Scrollbars --- */
+/* Custom Cinema Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: 4px;
+  background: #040714;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(103, 232, 249, 0.3);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(103, 232, 249, 0.6);
+  background: rgba(6, 182, 212, 0.5);
 }
 
-/* --- NEW: Input Focus Enhancements --- */
-input:focus,
-textarea:focus {
-  transform: scale(1.02);
-  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.3) !important;
-  transition: all 0.3s ease;
-}
-
-/* --- NEW: React Markdown Styling --- */
+/* React Markdown for AI Chat */
 .chat-markdown h1,
 .chat-markdown h2,
 .chat-markdown h3 {
@@ -186,35 +235,20 @@ textarea:focus {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   color: #cffafe;
+  font-family: 'Outfit', sans-serif;
 }
 
 .chat-markdown p {
   margin-bottom: 0.75rem;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
-.chat-markdown ul {
-  list-style-type: disc;
+.chat-markdown ul, .chat-markdown ol {
   margin-left: 1.5rem;
   margin-bottom: 0.75rem;
-}
-
-.chat-markdown ol {
-  list-style-type: decimal;
-  margin-left: 1.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.chat-markdown li {
-  margin-bottom: 0.25rem;
 }
 
 .chat-markdown strong {
-  color: #22d3ee;
+  color: #38bdf8;
   font-weight: 600;
-}
-
-.chat-markdown a {
-  color: #67e8f9;
-  text-decoration: underline;
 }
