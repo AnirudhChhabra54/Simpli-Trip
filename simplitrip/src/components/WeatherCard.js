@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+
 /**
  * WeatherCard Component
  * 
@@ -41,7 +43,7 @@ const WeatherCard = ({
 
       // Fetch current weather
       const currentRes = await axios.post(
-        'http://localhost:8000/api/v1/weather/current',
+        `${API_BASE}/api/v1/weather/current`,
         {
           lat: lat,
           lon: lon,
@@ -53,7 +55,7 @@ const WeatherCard = ({
 
       // Fetch forecast
       const forecastRes = await axios.post(
-        'http://localhost:8000/api/v1/weather/forecast',
+        `${API_BASE}/api/v1/weather/forecast`,
         {
           lat: lat,
           lon: lon,
@@ -66,7 +68,7 @@ const WeatherCard = ({
 
       // Fetch best season
       const seasonRes = await axios.get(
-        `http://localhost:8000/api/v1/weather/best-season?destination=${destination}`
+        `${API_BASE}/api/v1/weather/best-season?destination=${destination}`
       );
 
       setBestSeason(seasonRes.data);

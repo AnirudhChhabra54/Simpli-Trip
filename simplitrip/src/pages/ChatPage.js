@@ -1,18 +1,3 @@
-// import React from 'react';
-// import Layout from '../components/Layout';
-// import ChatTab from '../components/ChatTab';
-
-// const ChatPage = () => {
-//   return (
-//     <Layout>
-//       <div className="max-w-6xl mx-auto px-4 py-8">
-//         <ChatTab />
-//       </div>
-//     </Layout>
-//   );
-// };
-
-// export default ChatPage;
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaRobot, FaMagic } from 'react-icons/fa'; // Changed FaSparkles to FaMagic

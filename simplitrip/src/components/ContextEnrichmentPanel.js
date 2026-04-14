@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+
 /**
  * ContextEnrichmentPanel Component
  * 
@@ -38,7 +40,7 @@ const ContextEnrichmentPanel = ({
       setError(null);
 
       const response = await axios.post(
-        'http://localhost:8000/api/v1/enrichment/llm-context',
+        `${API_BASE}/api/v1/enrichment/llm-context`,
         {
           destination: destination,
           travel_dates: tripDates,

@@ -6,8 +6,16 @@ import remarkGfm from 'remark-gfm';
 import html2pdf from 'html2pdf.js';
 import Layout from '../components/Layout';
 import InteractiveItineraryMap from '../components/InteractiveItineraryMap';
+import LocationSearch from '../components/LocationSearch';
+import WeatherCard from '../components/WeatherCard';
+import DestinationCard from '../components/DestinationCard';
+import CostBreakdownChart from '../components/CostBreakdownChart';
+import ItineraryView from '../components/ItineraryView';
 import { startChat, chatMessage } from '../services/tripPlannerService';
+import { getAllDestinations } from '../services/aiService';
+import { resolveCoordinates } from '../utils/geocoding';
 import { formatMessage, cleanText, renderFormattedMessage } from '../utils/messageFormatter';
+import { parseItinerary, hasDayStructure } from '../utils/itineraryParser';
 import { addTrip } from '../services/firestore';
 import { useUser } from '../context/UserContext';
 
@@ -21,6 +29,7 @@ const TripPlannerPage = () => {
   // Form preferences
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
+  const [coords, setCoords] = useState({ lat: null, lon: null });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [budget, setBudget] = useState('');
@@ -46,10 +55,63 @@ const TripPlannerPage = () => {
   const [error, setError] = useState('');
   const [tripName, setTripName] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [latestItinerary, setLatestItinerary] = useState('');
+
+  // Discovered / enriched data
+  const [popularDestinations, setPopularDestinations] = useState([]);
+  const [destinationsLoaded, setDestinationsLoaded] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getAllDestinations();
+        if (mounted && data?.destinations) {
+          setPopularDestinations(data.destinations.slice(0, 6));
+        }
+      } catch (e) {
+        // Popular destinations are optional; ignore failures
+      } finally {
+        if (mounted) setDestinationsLoaded(true);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialPrompt = searchParams.get('prompt');
+    if (initialPrompt) {
+      if (initialPrompt.toLowerCase().startsWith('trip to ')) {
+        const destName = initialPrompt.replace(/trip to /i, '').trim();
+        setDestination(destName);
+        resolveCoordinates(destName).then((c) => c && setCoords(c));
+      } else {
+        setDestination(initialPrompt);
+      }
+      setBudget((prev) => prev || '30000');
+    }
+  }, []);
+
+  const handleDestinationSelect = async (place) => {
+    if (!place) {
+      setDestination('');
+      setCoords({ lat: null, lon: null });
+      return;
+    }
+    const name = place.name || place.destination_name || destination;
+    setDestination(name);
+    if (place.lat && place.lon) {
+      setCoords({ lat: place.lat, lon: place.lon });
+    } else {
+      const resolved = await resolveCoordinates(name);
+      setCoords(resolved || { lat: null, lon: null });
+    }
+  };
 
   const categoryIcons = {
     beach: '🏖️',
@@ -105,6 +167,7 @@ Please provide a detailed itinerary with cost breakdown.`;
       const content = reply?.reply ?? reply?.message ?? reply?.text ?? String(reply);
       const formatted = formatMessage(cleanText(content));
       setMessages(prev => [...prev, { role: 'assistant', text: content, formatted }]);
+      if (hasDayStructure(content)) setLatestItinerary(content);
     } catch (err) {
       setError('Failed to generate itinerary');
       console.error(err);
@@ -127,6 +190,7 @@ Please provide a detailed itinerary with cost breakdown.`;
       const content = reply?.reply ?? reply?.message ?? reply?.text ?? String(reply);
       const formatted = formatMessage(cleanText(content));
       setMessages(prev => [...prev, { role: 'assistant', text: content, formatted }]);
+      if (hasDayStructure(content)) setLatestItinerary(content);
     } catch (err) {
       setError('Failed to send message');
       console.error(err);
@@ -143,6 +207,8 @@ Please provide a detailed itinerary with cost breakdown.`;
 
     const days = endDate && startDate ? Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) : 0;
     const selectedPrefs = Object.keys(preferences).filter(k => preferences[k]);
+    const itineraryMarkdown = latestItinerary || '';
+    const parsed = parseItinerary(itineraryMarkdown);
 
     try {
       setError('');
@@ -159,6 +225,11 @@ Please provide a detailed itinerary with cost breakdown.`;
         transportMode: transportMode,
         startDate: startDate,
         endDate: endDate,
+        itinerary: {
+          markdown: itineraryMarkdown,
+          parsedDays: parsed.days,
+          totalCost: parsed.days.reduce((sum, d) => sum + d.totalCost, 0),
+        },
         createdAt: new Date(),
         status: 'planned',
       };
@@ -239,12 +310,11 @@ Please provide a detailed itinerary with cost breakdown.`;
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-300 mb-2">Where do you want to go?</label>
-                        <input
-                          type="text"
-                          value={destination}
-                          onChange={(e) => setDestination(e.target.value)}
+                        <LocationSearch
+                          onLocationSelect={handleDestinationSelect}
                           placeholder="e.g., Paris, Tokyo, Goa..."
-                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                          initialValue={destination}
+                          required
                         />
                       </div>
                     </div>
@@ -403,6 +473,65 @@ Please provide a detailed itinerary with cost breakdown.`;
                 </motion.div>
               </div>
             </div>
+
+            {/* Live Weather Preview */}
+            {coords?.lat != null && coords?.lon != null && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <WeatherCard destination={destination} lat={coords.lat} lon={coords.lon} />
+              </motion.div>
+            )}
+
+            {/* Cost Breakdown Preview */}
+            {budget && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <CostBreakdownChart
+                  costData={{
+                    total_cost: parseInt(budget) || 0,
+                    confidence: 0.7,
+                    breakdown: {
+                      flights: Math.round((parseInt(budget) || 0) * 0.35),
+                      accommodation: Math.round((parseInt(budget) || 0) * 0.3),
+                      meals: Math.round((parseInt(budget) || 0) * 0.15),
+                      activities: Math.round((parseInt(budget) || 0) * 0.15),
+                      local_transport: Math.round((parseInt(budget) || 0) * 0.05),
+                    },
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* Popular Destinations */}
+            {destinationsLoaded && popularDestinations.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mb-8"
+              >
+                <h2 className="text-3xl font-bold text-white mb-6">Popular Destinations</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {popularDestinations.map((d, i) => (
+                    <DestinationCard
+                      key={`${d.destination_name}-${i}`}
+                      destination={d}
+                      isSelected={destination === d.destination_name}
+                      onSelect={(d) => handleDestinationSelect({ name: d.destination_name })}
+                    />
+                  ))}
+                </div>
+                {!popularDestinations.length && (
+                  <p className="text-gray-400">No popular destinations available right now.</p>
+                )}
+              </motion.div>
+            )}
           </motion.div>
         )}
 
@@ -521,6 +650,21 @@ Please provide a detailed itinerary with cost breakdown.`;
               </div>
 
             </div>
+
+            {/* Structured Itinerary View */}
+            {latestItinerary && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8"
+              >
+                <ItineraryView
+                  markdown={latestItinerary}
+                  destination={destination}
+                  budget={parseInt(budget) || null}
+                />
+              </motion.div>
+            )}
 
             {/* Save Modal */}
             {showSaveModal && (

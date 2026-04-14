@@ -80,9 +80,24 @@ export const tripPlannerService = {
 //    context as part of the request.
 
 export const startChat = async () => {
-  // backend currently doesn't provide a dedicated start endpoint; frontend
-  // can use a UUID as session id. We'll generate a simple timestamp id.
-  return `session-${Date.now()}`;
+  // Prefer the backend /chat/start endpoint to initialise a server-side session.
+  // Fall back to a locally-generated id if the backend is unreachable.
+  const fallbackId = `session-${Date.now()}`;
+  try {
+    const response = await fetch(`${API_BASE}/api/v1/chat/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: fallbackId, message: '' })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const id = data?.session_id || data?.sessionId || fallbackId;
+      return id;
+    }
+  } catch (e) {
+    // ignored - fall back to a local id
+  }
+  return fallbackId;
 };
 
 export const chatMessage = async (sessionId, message) => {

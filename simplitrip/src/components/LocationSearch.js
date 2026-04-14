@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+
 /**
  * LocationSearch Component
  * 
@@ -43,7 +45,7 @@ const LocationSearch = ({
     debounceTimer.current = setTimeout(async () => {
       try {
         const response = await axios.post(
-          'http://localhost:8000/api/v1/locations/search',
+          `${API_BASE}/api/v1/locations/search`,
           {
             query: query,
             limit: 8,

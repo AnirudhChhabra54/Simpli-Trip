@@ -621,6 +621,37 @@ export const checkHealth = async () => {
 };
 
 // ============================================
+// LLM MODEL MANAGEMENT (LM Studio)
+// ============================================
+
+/**
+ * Auto-connect to the LM Studio endpoint and list its loaded models.
+ * @returns {Promise} { connected, host, current_model, models }
+ */
+export const getLlmModels = async () => {
+  try {
+    const response = await apiClient.get('/api/v1/llm/models');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || 'Failed to list LLM models');
+  }
+};
+
+/**
+ * Switch the active model used by chat/generation.
+ * @param {string} model - Model id (e.g. 'qwen/qwen3.8-27b')
+ * @returns {Promise} { current_model, host }
+ */
+export const selectLlmModel = async (model) => {
+  try {
+    const response = await apiClient.post('/api/v1/llm/models/select', { model });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || 'Failed to select model');
+  }
+};
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -656,6 +687,8 @@ const aiService = {
   getAllDestinations,
   getAllPlaces,
   checkHealth,
+  getLlmModels,
+  selectLlmModel,
   formatCurrency,
   calculateDays,
 };
