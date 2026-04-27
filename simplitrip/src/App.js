@@ -39,31 +39,31 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/my-trips" 
+      <Route
+        path="/my-trips"
         element={
           <ProtectedRoute>
             <MyTripsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/plan-trip" 
+      <Route
+        path="/plan-trip"
         element={
           <ProtectedRoute>
             <TripPlannerPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
+      <Route
         path="/chat"
         element={
           <ProtectedRoute>
@@ -71,13 +71,13 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/trip/:id" 
+      <Route
+        path="/trip/:id"
         element={
           <ProtectedRoute>
             <TripDetailPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
@@ -85,11 +85,25 @@ const AppRoutes = () => {
 };
 
 const App = () => {
+  const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    setMousePosition({ x: e.clientX, y: e.clientY });
+  };
+
   return (
     <UserProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <div
+        onMouseMove={handleMouseMove}
+        style={{ '--mouse-x': `${mousePosition.x}px`, '--mouse-y': `${mousePosition.y}px` }}
+        className="min-h-screen relative w-full overflow-x-hidden text-slate-100"
+      >
+        <div className="glass-ambient-light pointer-events-none fixed inset-0 z-[100]"></div>
+
+        <Router>
+          <AppRoutes />
+        </Router>
+      </div>
     </UserProvider>
   );
 };
