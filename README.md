@@ -79,56 +79,56 @@ Modern travel planning has become overwhelming, expensive, and fragmented:
 ### 1. 🌌 Cinematic Hero with 3D Celestial Globe & Prompt Console
 *Interactive Three.js celestial sphere with flight trajectories and natural language input console.*
 
-![Landing Page Hero](../media/01_landing_hero.png)
+![Landing Page Hero](media/01_landing_hero.png)
 
 ---
 
 ### 2. 🏖️ Curated Destination Wonderlands
 *Live market price estimates, weather pills, and AI match percentages across global and domestic escapes.*
 
-![Curated Destinations](../media/02_landing_destinations.png)
+![Curated Destinations](media/02_landing_destinations.png)
 
 ---
 
 ### 3. 🗺️ Dynamic Itinerary Architecture Preview
 *Day-by-day breakdown with budget tracking, timeline cards, and activity sequencing.*
 
-![Itinerary Preview](../media/03_landing_itinerary_preview.png)
+![Itinerary Preview](media/03_landing_itinerary_preview.png)
 
 ---
 
 ### 4. ⚡ Instant 1-Click Demo Explorer & Authentication
 *Instant guest access to explore the full platform immediately alongside secure Firebase email auth.*
 
-![Login & Demo Mode](../media/04_login_demo_mode.png)
+![Login & Demo Mode](media/04_login_demo_mode.png)
 
 ---
 
 ### 5. 🎛️ Traveler Dashboard & Quick Studios
 *Dynamic metrics, quick studio launchers, and trending one-click blueprint generators.*
 
-![Dashboard Overview](../media/05_dashboard_overview.png)
+![Dashboard Overview](media/05_dashboard_overview.png)
 
 ---
 
 ### 6. 🚀 AI Trip Planner Studio
 *Detailed preference controls (budget slider, vibe tags, transport modes, accommodation styles).*
 
-![Trip Planner Studio](../media/06_trip_planner_studio.png)
+![Trip Planner Studio](media/06_trip_planner_studio.png)
 
 ---
 
 ### 7. 🗄️ Itinerary Vault & Saved Journeys
 *Real-time search, multi-criteria sorting, edit tools, and PDF exports with offline fallback.*
 
-![Saved Trips Vault](../media/07_my_trips_vault.png)
+![Saved Trips Vault](media/07_my_trips_vault.png)
 
 ---
 
 ### 8. 🤖 AI Travel Concierge Chat
 *Multi-turn travel companion for local recommendations, packing lists, and hidden gems.*
 
-![AI Travel Concierge](../media/08_ai_travel_concierge.png)
+![AI Travel Concierge](media/08_ai_travel_concierge.png)
 
 </div>
 
