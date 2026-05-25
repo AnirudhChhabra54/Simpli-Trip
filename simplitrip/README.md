@@ -7,13 +7,14 @@
 [![License](https://img.shields.io/badge/License-MIT-10b981?style=for-the-badge)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-React_18_%7C_Three.js_%7C_Tailwind-06b6d4?style=for-the-badge&logo=react)](https://react.dev)
 [![Backend](https://img.shields.io/badge/Backend-FastAPI_%7C_Python_3.11-3b82f6?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![RAG Engine](https://img.shields.io/badge/RAG_Engine-ChromaDB_%7C_MiniLM-10b981?style=for-the-badge&logo=databricks)](https://www.trychroma.com/)
 [![AI Engine](https://img.shields.io/badge/AI_Engine-LM_Studio_%7C_Local_LLM-8b5cf6?style=for-the-badge&logo=openai)](https://lmstudio.ai)
 
 <br/>
 
-**SimpliTrip** is a cinema-grade, autonomous AI travel platform that transforms natural human language into hyper-personalized, day-by-day itineraries complete with real-time weather forecasts, ground-truth routing, cost estimation, and 1-click PDF exports.
+**SimpliTrip** is a cinema-grade, autonomous AI travel platform that transforms natural human language into hyper-personalized, day-by-day itineraries complete with real-time weather forecasts, ground-truth RAG knowledge retrieval, routing optimization, cost estimation, and 1-click PDF exports.
 
-[Explore Repository](https://github.com/AnirudhChhabra54/Simpli-Trip.git) • [Quick Start Guide](#-quick-start-interactive-guide) • [Architecture](#-technology-stack--architecture) • [Live UI Gallery](#-interactive-ui-gallery)
+[Explore Repository](https://github.com/AnirudhChhabra54/Simpli-Trip.git) • [RAG Architecture](#-retrieval-augmented-generation-rag-architecture) • [Quick Start Guide](#-quick-start-interactive-guide) • [Architecture](#-technology-stack--architecture) • [Live UI Gallery](#-interactive-ui-gallery)
 
 </div>
 
@@ -32,7 +33,7 @@ graph LR
     subgraph Solution ["✨ The SimpliTrip Solution"]
         E[Natural Prompt Console] --> H[SimpliTrip Engine]
         F[Open-Meteo & Nominatim Geocoding] --> H
-        G[Local Private LLM Reasoning] --> H
+        G[Local RAG + Private LLM Reasoning] --> H
         H --> I[Cinema-Grade Day-by-Day Blueprints]
     end
 
@@ -51,12 +52,13 @@ graph LR
 Modern travel planning has become overwhelming, expensive, and fragmented:
 1. **Multi-Tab Cognitive Overload**: Planning a 5-day getaway requires juggling 10–15 tabs across flight aggregators, hotel portals, travel blogs, weather channels, and messy spreadsheets.
 2. **Generic Commercial Bias**: Traditional agencies and booking sites push one-size-fits-all, sponsored tour packages with heavy middleman markups and cookie-cutter tourist traps.
-3. **Flawed Cloud AI Wrappers**: Generic AI chatbots lack real-world spatial and meteorological context. They hallucinate beach days during heavy monsoons, produce unrealistic transit schedules, and transmit sensitive personal travel dates and queries to cloud servers.
+3. **Flawed Cloud AI Wrappers**: Generic AI chatbots lack real-world spatial and meteorological context. They hallucinate closed venues or monsoon beaches, produce unrealistic transit schedules, and transmit sensitive personal travel dates and queries to cloud servers.
 
 ---
 
 ### 🟢 The Solution
 **SimpliTrip** introduces a private, deeply enriched, and autonomous travel architecture:
+- **Local RAG (Retrieval-Augmented Generation)**: Grounded in a high-density ChromaDB vector knowledge base that eliminates AI hallucinations by injecting verified local sights, hidden viewpoints, operating hours, and cultural insights.
 - **Local Neural Intelligence**: Integrates seamlessly with local open-weights LLMs via LM Studio (e.g., Qwen, Llama 3, Mistral), providing unlimited, free, zero-latency inference with complete data sovereignty.
 - **Dynamic Context Enrichment Engine**: Real-time cross-referencing with **Open-Meteo** (live atmospheric conditions, UV, wind, precipitation) and **OpenStreetMap / Nominatim** (exact coordinate boundaries and geographic sanity checks).
 - **TSP Route Weaver**: Mathematically orders stops to minimize transit fatigue and eliminate backtracking.
@@ -67,8 +69,53 @@ Modern travel planning has become overwhelming, expensive, and fragmented:
 ### 🟣 The Impact
 - **⏱️ 95% Research Reduction**: Turns 8+ hours of chaotic cross-referencing into a comprehensive, customized itinerary generated in under 4 seconds.
 - **🔒 100% Privacy & Zero Token Bills**: No per-prompt API costs, no credit cards required, and zero personal tracking.
-- **🎯 Ground-Truth Accuracy**: Every schedule is calibrated against live seasonal weather, realistic transit times, and customizable traveler preferences (budget, dietary, pacing).
+- **🎯 Ground-Truth Accuracy**: Every schedule is anchored by verified RAG knowledge, live seasonal weather, realistic transit times, and customizable traveler preferences (budget, dietary, pacing).
 - **📱 Ready for the Real World**: Includes one-click PDF passport export, interactive OpenStreetMap rendering, and instant sharing links.
+
+---
+
+## 🧠 Retrieval-Augmented Generation (RAG) Architecture
+
+SimpliTrip uses a dedicated, privacy-preserving **Local RAG Pipeline** to ground the LLM's generative reasoning in verified destination datasets, preventing the common hallucinations found in vanilla LLM chatbots.
+
+```mermaid
+graph TD
+    A[Destination Datasets & Travel Records] -->|csv_to_jsonl.py| B[Semantic Knowledge Chunks]
+    B -->|Sentence-Transformers all-MiniLM-L6-v2| C[(ChromaDB Vector Store: travel_knowledge)]
+    
+    D[User Travel Query / Preferences] -->|NLP Intent Parser| E[Search Query Vector]
+    E -->|Cosine Similarity Query top_k=5| C
+    C -->|Retrieved Knowledge| F[Verified Local Sights & Secret Gems]
+    
+    G[Open-Meteo Weather API] -->|Live Forecast| H[Meteorological Context]
+    I[Nominatim OSM Geocoding] -->|Lat / Lon Coordinates| J[Spatial Constraints]
+    
+    F --> K[Prompt Synthesis Engine]
+    H --> K
+    J --> K
+    D --> K
+    
+    K -->|Enriched Zero-Hallucination Prompt| L[Local LLM - LM Studio]
+    L -->|Structured Markdown Itinerary| M[React Cinema 2.0 Studio / PDF]
+
+    style C fill:#1e1b4b,stroke:#818cf8,stroke-width:2px
+    style K fill:#064e3b,stroke:#34d399,stroke-width:2px
+    style L fill:#1e293b,stroke:#38bdf8,stroke-width:2px
+    style M fill:#081c2e,stroke:#06b6d4,stroke-width:2px
+```
+
+### 1. How the Knowledge Base is Built
+1. **Raw Ingestion**: Multi-destination travel data (attraction details, operating windows, hidden viewpoints, local food specialties, safety precautions) is normalized using `ml_pipeline/csv_to_jsonl.py`.
+2. **Dense Vector Embeddings**: Documents are converted into 384-dimensional dense semantic vectors using `sentence-transformers/all-MiniLM-L6-v2`.
+3. **Local Vector Database**: Embeddings and metadata are indexed into a persistent local **ChromaDB** collection (`travel_knowledge`) on disk (`backend/data/chromadb`).
+4. **Deterministic Fallback**: In environments without PyTorch or during offline boot, a built-in deterministic hash-embedding function ensures vector search operates seamlessly without crashing.
+
+### 2. Runtime Retrieval & Context Injection
+When a user requests a journey (e.g., *"4 days in Goa with secret coves and seafood"*):
+1. **Query Formulation**: The query is embedded and matched against the vector space using cosine similarity (`RAGService.retrieve(query, top_k=5)`).
+2. **Chunk Extraction**: Relevant documents (e.g., Cola Beach freshwater lagoon timings, Cabo de Rama cliff trails, authentic Fontainhas bakeries) are pulled alongside their metadata tags.
+3. **Prompt Augmentation**: The retrieved facts are injected into the system prompt as a `[Verified Ground-Truth Context]` block.
+4. **Constrained Generation**: The LLM synthesizes an itinerary referencing actual spots, exact opening hours, and local logistics with near-zero hallucination rates.
 
 ---
 
@@ -152,6 +199,8 @@ Modern travel planning has become overwhelming, expensive, and fragmented:
 | **Python 3.11** | Runtime | AI ecosystem interoperability |
 | **FastAPI** | Web Framework | Asynchronous endpoints, automatic OpenAPI docs, and high throughput |
 | **Pydantic v2** | Data Validation | Strict schema enforcement and type coercion |
+| **ChromaDB** | Vector Database | Local disk-persisted vector store for RAG knowledge retrieval |
+| **Sentence-Transformers** | Embedding Engine | `all-MiniLM-L6-v2` dense 384-dimensional vector embeddings |
 | **LM Studio** | Local Inference | OpenAI-compatible endpoint at `http://localhost:1234/v1` |
 | **Open-Meteo** | Weather API | Free, keyless real-time meteorological forecasts |
 | **Nominatim (OSM)** | Geolocation | OpenStreetMap geocoding and city boundary calculations |
@@ -213,16 +262,16 @@ PORT=3001 npm start
     (Extracts: destination, duration, budget, vibes)
                        │
                        ▼
-       [Stage 2: Context Enrichment Engine]
-  ┌────────────────────┴────────────────────┐
-  ▼                                         ▼
-[Nominatim OSM Geocoding]          [Open-Meteo Weather API]
-(Lat/Lon, City Boundaries)         (Live Temperature & Rain)
+       [Stage 2: Context Enrichment & RAG Engine]
+  ┌────────────────────┼────────────────────┐
+  ▼                    ▼                    ▼
+[ChromaDB RAG]    [Nominatim OSM]    [Open-Meteo Weather]
+(Secret Spots)    (Coordinates)      (Live Forecasts)
   └────────────────────┬────────────────────┘
                        │
                        ▼
        [Stage 3: Neural Prompt Synthesis]
- (Combines preferences + weather constraints + budget)
+ (Combines preferences + RAG context + weather + budget)
                        │
                        ▼
       [Stage 4: Local LLM Generation (LM Studio)]
@@ -254,12 +303,18 @@ Simpli-Trip/
 │   │   │   ├── routes.py              # Main API endpoints
 │   │   │   └── schemas.py             # Pydantic data schemas
 │   │   ├── services/
+│   │   │   ├── rag_service.py         # ChromaDB RAG retrieval engine
 │   │   │   ├── lmstudio_service.py    # LM Studio LLM connector
 │   │   │   ├── model_service.py       # Core orchestration & synthesis
 │   │   │   ├── weather_service.py     # Open-Meteo weather integration
 │   │   │   └── location_service.py    # Nominatim OSM geocoding
+│   │   ├── data/                      # Persistent ChromaDB vector storage
 │   │   ├── main.py                    # FastAPI application entrypoint
 │   │   └── requirements.txt           # Python dependencies
+│   ├── ml_pipeline/                   # RAG dataset & embedding utilities
+│   │   ├── csv_to_jsonl.py            # Dataset normalization
+│   │   ├── build_embeddings.py        # Vector embedding generation
+│   │   └── reindex.py                 # ChromaDB collection reindexer
 │   ├── src/                           # React frontend
 │   │   ├── components/                # Modular UI components
 │   │   │   ├── CinematicHeroCanvas.js # Three.js 3D globe & particles
